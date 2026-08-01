@@ -1,0 +1,159 @@
+@if (open) {
+  <div class="ta-backdrop" (click)="close()" role="presentation">
+    <div
+      class="ta-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ta-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="ta-head">
+        <div>
+          <p class="ta-eyebrow"><svg lucideCheckSquare></svg> Asignación contextual</p>
+          <h2 id="ta-title">Nueva tarea del expediente</h2>
+          @if (!allowCasePick) {
+            <p class="ta-case">
+              Caso bloqueado:
+              <strong>{{ caseLabel || caseId }}</strong>
+            </p>
+          }
+        </div>
+        <button type="button" class="ta-icon" (click)="close()" aria-label="Cerrar">
+          <svg lucideX></svg>
+        </button>
+      </header>
+
+      @if (error()) {
+        <div class="ta-error">{{ error() }}</div>
+      }
+
+      <form class="ta-form" (ngSubmit)="submit()">
+        @if (allowCasePick) {
+          <label>
+            Buscar expediente
+            <div class="ta-row">
+              <input
+                [(ngModel)]="caseSearch"
+                name="caseSearch"
+                placeholder="Código o fallecido…"
+              />
+              <button type="button" class="ta-btn ghost" (click)="searchCases()">
+                Buscar
+              </button>
+            </div>
+          </label>
+          <label>
+            Caso (obligatorio)
+            @if (loadingCases()) {
+              <span class="ta-loading"><svg lucideLoaderCircle class="spin"></svg> Cargando casos…</span>
+            } @else {
+              <select
+                [ngModel]="selectedCaseId"
+                (ngModelChange)="onCasePicked($event)"
+                name="selectedCaseId"
+                required
+              >
+                <option value="">Seleccione un caso…</option>
+                @for (c of cases(); track c.id) {
+                  <option [value]="c.id">
+                    {{ c.internalCode }} — {{ c.deceased.fullName }}
+                  </option>
+                }
+              </select>
+            }
+          </label>
+        } @else {
+          <input type="hidden" [value]="caseId" />
+        }
+
+        <div class="ta-creator">
+          <span>Creado por</span>
+          <strong>{{ creatorLabel() }}</strong>
+        </div>
+
+        @if (hint()) {
+          <p class="ta-hint">{{ hint() }}</p>
+        }
+
+        <label>
+          Tipo de tarea operativa
+          <select [(ngModel)]="taskType" name="taskType" required>
+            @for (t of taskTypes(); track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Título (opcional — usa el tipo si vacío)
+          <input [(ngModel)]="title" name="title" placeholder="Ej: Llamar a herederos en Cali" />
+        </label>
+
+        <label>
+          Instrucciones / descripción
+          <textarea
+            rows="3"
+            [(ngModel)]="description"
+            name="description"
+            placeholder="Detalle operativo sobre este caso…"
+          ></textarea>
+        </label>
+
+        <div class="ta-row">
+          <label>
+            Fecha de vencimiento (SLA)
+            <input type="date" [(ngModel)]="dueDate" name="dueDate" />
+          </label>
+          <label>
+            Prioridad
+            <select [(ngModel)]="priority" name="priority">
+              <option value="LOW">Baja</option>
+              <option value="MEDIUM">Media</option>
+              <option value="HIGH">Alta</option>
+              <option value="URGENT">Urgente</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Buscar responsable
+          <input
+            [(ngModel)]="userFilter"
+            name="userFilter"
+            placeholder="Nombre o rol…"
+          />
+        </label>
+
+        <label>
+          Asignar a
+          @if (loadingUsers()) {
+            <span class="ta-loading"><svg lucideLoaderCircle class="spin"></svg> Cargando opciones…</span>
+          } @else if (!effectiveCaseId()) {
+            <span class="ta-loading">Seleccione un caso primero</span>
+          } @else {
+            <select [(ngModel)]="assigneeId" name="assigneeId" required>
+              @for (u of filteredUsers(); track u.id) {
+                <option [value]="u.id">
+                  {{ u.firstName }} {{ u.lastName }}
+                  @if (u.tag) {
+                    — {{ u.tag }}
+                  }
+                </option>
+              }
+            </select>
+          }
+        </label>
+
+        <footer class="ta-actions">
+          <button type="button" class="ta-btn ghost" (click)="close()">Cancelar</button>
+          <button type="submit" class="ta-btn primary" [disabled]="saving() || loadingUsers()">
+            @if (saving()) {
+              <svg lucideLoaderCircle class="spin"></svg>
+            }
+            Crear y vincular al caso
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+}

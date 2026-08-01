@@ -1,0 +1,227 @@
+<section class="cal">
+  <header class="cal-hero">
+    <div>
+      <p class="cal-eyebrow"><svg lucideCalendar></svg> Operaciones · America/Bogota</p>
+      <h1>Calendario {{ isManager() ? 'global' : 'operativo' }}</h1>
+      <p>
+        @if (isManager()) {
+          Control de carga por asesor, semáforos SLA y balanceo por drag &amp; drop.
+        } @else {
+          Sus tareas con vencimiento. Verde a tiempo, amarillo alerta, rojo vencido.
+        }
+      </p>
+    </div>
+    <div class="cal-hero__actions">
+      <button type="button" class="cal-btn" (click)="openCreate(rangeFrom() || '')">
+        <svg lucidePlus></svg> Nueva tarea
+      </button>
+      <button type="button" class="cal-btn" (click)="loadEvents()" [disabled]="loading()">
+        <svg lucideRefreshCw></svg> Actualizar
+      </button>
+    </div>
+  </header>
+
+  @if (isManager()) {
+    <div class="cal-filters">
+      <div class="cal-filters__head">
+        <svg lucideUsers></svg>
+        <strong>Filtrar asesores</strong>
+        <button type="button" class="cal-link" (click)="clearAdvisorFilter()">Todos</button>
+        <button type="button" class="cal-btn primary" (click)="applyAdvisorFilter()">Aplicar</button>
+      </div>
+      <div class="cal-chips">
+        @for (r of resources(); track r.id) {
+          <label class="cal-chip" [class.is-on]="selectedAdvisors().includes(r.id)">
+            <input
+              type="checkbox"
+              [checked]="selectedAdvisors().includes(r.id)"
+              (change)="toggleAdvisor(r.id)"
+            />
+            {{ r.title }}
+          </label>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="cal-toggle">
+    <button type="button" [class.is-on]="viewMode() === 'calendar'" (click)="setViewMode('calendar')">
+      Calendario
+    </button>
+    @if (isManager()) {
+      <button
+        type="button"
+        class="desk-only"
+        [class.is-on]="viewMode() === 'resources'"
+        (click)="setViewMode('resources')"
+      >
+        Recursos / Timeline
+      </button>
+    }
+    <button type="button" [class.is-on]="viewMode() === 'agenda'" (click)="setViewMode('agenda')">
+      Agenda
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="cal-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="cal-empty"><svg lucideLoaderCircle class="spin"></svg> Cargando eventos…</div>
+  }
+
+  @if (viewMode() === 'calendar') {
+    <div class="cal-board">
+      <full-calendar #fc [options]="calendarOptions()" />
+    </div>
+  }
+
+  @if (viewMode() === 'resources' && isManager()) {
+    <div class="cal-resources">
+      <p class="cal-hint">
+        Arrastre una tarjeta a otra fila de asesor para reasignar (auditado).
+      </p>
+      @for (r of resources(); track r.id) {
+        @if (!selectedAdvisors().length || selectedAdvisors().includes(r.id)) {
+          <section
+            class="cal-res-row"
+            (dragover)="onDragOver($event)"
+            (drop)="onDropResource(r.id, $event)"
+          >
+            <header>
+              <strong>{{ r.title }}</strong>
+              <em>{{ eventsForResource(r.id).length }} tareas</em>
+            </header>
+            <div class="cal-res-cards">
+              @for (ev of eventsForResource(r.id); track ev.id) {
+                <article
+                  class="cal-card"
+                  [class.is-red]="ev.slaTone === 'red'"
+                  [class.is-yellow]="ev.slaTone === 'yellow'"
+                  [class.is-green]="ev.slaTone === 'green'"
+                  draggable="true"
+                  (dragstart)="onDragStart(ev.id, $event)"
+                  (click)="selected.set(ev); sheetAssignee.set(ev.assigneeId ?? ''); sheetDue.set(ev.dateKey); sheetOpen.set(true)"
+                >
+                  <span class="cal-av">{{ ev.assigneeInitials }}</span>
+                  <div>
+                    <strong>{{ ev.title }}</strong>
+                    <small>{{ ev.caseCode }} · {{ ev.dateKey }} · {{ ev.slaLabel }}</small>
+                  </div>
+                </article>
+              } @empty {
+                <p class="cal-muted">Sin tareas en el rango</p>
+              }
+            </div>
+          </section>
+        }
+      }
+    </div>
+  }
+
+  @if (viewMode() === 'agenda') {
+    <ul class="cal-agenda">
+      @for (ev of events(); track ev.id) {
+        <li
+          [class.is-red]="ev.slaTone === 'red'"
+          [class.is-yellow]="ev.slaTone === 'yellow'"
+          (click)="selected.set(ev); sheetAssignee.set(ev.assigneeId ?? ''); sheetDue.set(ev.dateKey); sheetOpen.set(true)"
+        >
+          <time>{{ ev.dateKey }}</time>
+          <div>
+            <strong>{{ ev.title }}</strong>
+            <small>
+              {{ ev.caseCode }}
+              @if (isManager()) {
+                · <span class="cal-badge">{{ ev.assigneeName }}</span>
+              }
+              · {{ ev.slaLabel }}
+            </small>
+          </div>
+        </li>
+      } @empty {
+        <li class="cal-muted">Sin eventos en el rango visible.</li>
+      }
+    </ul>
+  }
+</section>
+
+<app-task-assigner-modal
+  [open]="showAssigner()"
+  [allowCasePick]="true"
+  [defaultDueDate]="assignDueDate()"
+  (closed)="showAssigner.set(false)"
+  (created)="onTaskCreated()"
+/>
+
+@if (sheetOpen() && selected(); as ev) {
+  <div class="cal-backdrop" (click)="closeSheet()" role="presentation">
+    <aside class="cal-sheet" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header>
+        <div>
+          <h2>{{ ev.title }}</h2>
+          <p>{{ ev.slaLabel }} · {{ ev.status }}</p>
+        </div>
+        <button type="button" class="cal-icon" (click)="closeSheet()" aria-label="Cerrar">
+          <svg lucideX></svg>
+        </button>
+      </header>
+
+      @if (sheetError()) {
+        <div class="cal-error">{{ sheetError() }}</div>
+      }
+
+      <dl>
+        <div>
+          <dt>Caso</dt>
+          <dd>
+            <a [routerLink]="['/cases', ev.caseId]" (click)="closeSheet()">
+              {{ ev.caseCode || ev.caseId }}
+            </a>
+            @if (ev.deceasedName) {
+              <small>{{ ev.deceasedName }}</small>
+            }
+          </dd>
+        </div>
+        <div>
+          <dt>Creado por</dt>
+          <dd>{{ ev.createdByName || '—' }}</dd>
+        </div>
+      </dl>
+
+      <label>
+        Vencimiento (America/Bogota)
+        <input type="date" [ngModel]="sheetDue()" (ngModelChange)="sheetDue.set($event)" />
+      </label>
+
+      @if (isManager()) {
+        <label>
+          Responsable
+          <select [ngModel]="sheetAssignee()" (ngModelChange)="sheetAssignee.set($event)">
+            @for (r of resources(); track r.id) {
+              <option [value]="r.id">{{ r.title }}</option>
+            }
+          </select>
+        </label>
+      } @else {
+        <p class="cal-muted">Asignado a: <strong>{{ ev.assigneeName }}</strong></p>
+      }
+
+      <footer>
+        <button type="button" class="cal-btn" (click)="closeSheet()">Cerrar</button>
+        <button
+          type="button"
+          class="cal-btn primary"
+          [disabled]="sheetSaving()"
+          (click)="saveSheet()"
+        >
+          @if (sheetSaving()) {
+            <svg lucideLoaderCircle class="spin"></svg>
+          }
+          Guardar cambios
+        </button>
+      </footer>
+    </aside>
+  </div>
+}

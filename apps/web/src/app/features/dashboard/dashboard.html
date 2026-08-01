@@ -1,0 +1,169 @@
+<section class="cmd">
+  <header class="cmd-hero">
+    <div>
+      <p class="cmd-eyebrow">Centro de comando</p>
+      <h1>{{ greeting() }}</h1>
+      <p class="cmd-lead">{{ urgentSummary() }}</p>
+    </div>
+    <div class="cmd-hero__actions">
+      <a routerLink="/cases" class="cmd-btn">Mis casos</a>
+      <a routerLink="/tasks" class="cmd-btn ghost">Tareas</a>
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="cmd-error">{{ error() }}</p>
+  }
+
+  @if (loading() && !data()) {
+    <p class="cmd-muted">Cargando panel…</p>
+  }
+
+  @if (kpis(); as k) {
+    <section class="cmd-scores">
+      <article>
+        <header><svg lucideBriefcase></svg> Casos activos</header>
+        <strong>{{ k.activeCases | number }}</strong>
+        <small>Total cartera {{ k.totalCases | number }}</small>
+      </article>
+      <article>
+        <header><svg lucideClipboardList></svg> Tareas abiertas</header>
+        <strong>{{ todayTasks() | number }}</strong>
+        <small class="danger">Vencidas {{ k.overdueTasks | number }}</small>
+      </article>
+      <article>
+        <header><svg lucideCheckCircle2></svg> Rendimiento</header>
+        <strong>{{ performancePct() | number: '1.0-1' }}%</strong>
+        <small>Tasa de éxito · meta {{ k.successTarget }}%</small>
+      </article>
+      <article>
+        <header><svg lucideUsers></svg> Valor en gestión</header>
+        <strong>{{ formatMillions(k.inManagement) }}</strong>
+        <small>Recuperado {{ formatMillions(k.collected) }}</small>
+      </article>
+    </section>
+
+    <section class="cmd-bento">
+      <!-- Triage urgente -->
+      <article class="cmd-panel cmd-triage">
+        <header>
+          <h2><svg lucideAlertTriangle></svg> Lo más urgente</h2>
+          <a routerLink="/tasks">Ver tablero →</a>
+        </header>
+        @if (!triage().length) {
+          <p class="cmd-empty">Sin alertas rojas o amarillas. Excelente.</p>
+        } @else {
+          <ul>
+            @for (t of triage(); track t.id) {
+              <li [class.is-red]="t.tone === 'red'" [class.is-yellow]="t.tone === 'yellow'">
+                <label>
+                  <input type="checkbox" (change)="toggleTask(t.id)" />
+                  <span>
+                    <strong>{{ t.title }}</strong>
+                    <small>
+                      {{ t.caseCode || 'Sin caso' }}
+                      @if (t.dueDate) {
+                        · {{ t.dueDate | date: 'mediumDate' }}
+                      }
+                      · {{ t.slaLabel || t.tone }}
+                    </small>
+                  </span>
+                </label>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+
+      <!-- Casos recientes -->
+      <article class="cmd-panel cmd-cases">
+        <header>
+          <h2>Casos recientes</h2>
+          <a routerLink="/cases">Todos →</a>
+        </header>
+        @if (!recent().length) {
+          <p class="cmd-empty">Sin casos en el alcance.</p>
+        } @else {
+          <ul class="cmd-case-list">
+            @for (c of recent().slice(0, 8); track c.id) {
+              <li (click)="openCase(c.id)" [class.is-danger]="c.semaphore === 'danger'">
+                <div>
+                  <code>{{ c.internalCode }}</code>
+                  <strong>{{ c.deceasedName }}</strong>
+                  <small>{{ c.stage }} · {{ c.advisor }}</small>
+                </div>
+                <span class="cmd-dot" [attr.data-tone]="c.semaphore"></span>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+
+      <!-- Notas personales -->
+      <article class="cmd-panel cmd-notes">
+        <header>
+          <h2><svg lucideStickyNote></svg> Notas personales</h2>
+          <button type="button" class="cmd-icon-btn" (click)="addNote()" title="Nueva nota">
+            <svg lucidePlus></svg>
+          </button>
+        </header>
+        <p class="cmd-hint">Solo usted las ve. Se guardan al salir del campo.</p>
+        <div class="cmd-notes-grid">
+          @for (n of notes(); track n.id) {
+            <div class="postit" [attr.data-color]="n.colorFondo">
+              <textarea
+                [ngModel]="noteDrafts()[n.id]"
+                (ngModelChange)="onNoteInput(n.id, $event)"
+                (blur)="saveNote(n.id)"
+                rows="4"
+                placeholder="Escriba una nota…"
+              ></textarea>
+              <button type="button" class="postit-del" (click)="removeNote(n.id)" title="Eliminar">
+                <svg lucideTrash2></svg>
+              </button>
+            </div>
+          } @empty {
+            <button type="button" class="postit postit-add" (click)="addNote()">
+              <svg lucidePlus></svg> Agregar post-it
+            </button>
+          }
+        </div>
+      </article>
+    </section>
+
+    @if (!isAdvisor() && advisorRows().length) {
+      <section class="cmd-panel cmd-advisors">
+        <header>
+          <h2>Gestión por asesor</h2>
+          <a routerLink="/indicators">Indicadores →</a>
+        </header>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Asesor</th>
+                <th>Asignados</th>
+                <th>En gestión</th>
+                <th>Recuperados</th>
+                <th>% Éxito</th>
+                <th>Cuellos</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of advisorRows(); track a.id) {
+                <tr>
+                  <td>{{ a.name }}</td>
+                  <td>{{ a.assigned }}</td>
+                  <td>{{ a.inGestion }}</td>
+                  <td>{{ a.recovered }}</td>
+                  <td>{{ a.recoveryPct }}%</td>
+                  <td>{{ a.bottlenecks }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</section>

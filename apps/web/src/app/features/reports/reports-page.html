@@ -1,0 +1,156 @@
+<section class="rp">
+  <header class="rp-hero">
+    <div>
+      <p class="rp-eyebrow"><svg lucideFileBarChart></svg> Gestión de rendimiento</p>
+      <h1>Reportes</h1>
+      <p>
+        @if (isManager()) {
+          Vista global de la plataforma. Filtre por asesor para evaluar gestión individual.
+        } @else {
+          Métricas de su cartera: casos a cargo, tareas completadas y vencidas.
+        }
+      </p>
+    </div>
+    <div class="rp-hero__actions">
+      @if (isManager()) {
+        <label class="rp-filter">
+          Asesor
+          <select
+            [ngModel]="advisorFilter()"
+            (ngModelChange)="onAdvisorChange($event)"
+          >
+            <option value="">Todos los asesores</option>
+            @for (a of data()?.advisors ?? []; track a.id) {
+              <option [value]="a.id">{{ a.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      <button type="button" class="rp-btn" (click)="load()" [disabled]="loading()">
+        <svg lucideRefreshCw></svg> Actualizar
+      </button>
+    </div>
+  </header>
+
+  @if (data(); as d) {
+    <p class="rp-scope">
+      Alcance: <strong>{{ d.scope.label }}</strong>
+      · Modo {{ d.mode === 'ASESOR' ? 'asesor' : 'dirección' }}
+    </p>
+  }
+
+  @if (error()) {
+    <div class="rp-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !data()) {
+    <div class="rp-empty">
+      <svg lucideLoaderCircle class="spin"></svg>
+      Cargando reporte…
+    </div>
+  }
+
+  @if (kpis(); as k) {
+    <section class="rp-kpis">
+      <article>
+        <header><svg lucideBriefcase></svg> Casos a cargo</header>
+        <strong>{{ k.totalCases | number }}</strong>
+        <small>Activos {{ k.activeCases }} · Recuperados {{ k.recoveredCases }}</small>
+      </article>
+      <article>
+        <header><svg lucideCheckCircle2></svg> Tasa de éxito</header>
+        <strong>{{ k.successRate | number: '1.0-1' }}%</strong>
+        <small>Recuperados / total de casos</small>
+      </article>
+      <article>
+        <header><svg lucideClipboardList></svg> Tareas completadas</header>
+        <strong>{{ k.completedTasks | number }}</strong>
+        <small>En proceso {{ k.inProgressTasks }} · Pendientes {{ k.pendingTasks }}</small>
+      </article>
+      <article class="is-alert">
+        <header><svg lucideAlertTriangle></svg> Tareas vencidas</header>
+        <strong>{{ k.overdueTasks | number }}</strong>
+        <small>Requieren atención inmediata</small>
+      </article>
+      <article>
+        <header>Valor recuperable</header>
+        <strong>{{ k.recoverableValue | currency: 'COP':'symbol-narrow':'1.0-0' }}</strong>
+        <small>Cobrado {{ k.collectedFees | currency: 'COP':'symbol-narrow':'1.0-0' }}</small>
+      </article>
+    </section>
+
+    <div class="rp-grid">
+      <section class="rp-panel">
+        <header>
+          <h2>Casos recientes</h2>
+          <a routerLink="/cases">Ver casos →</a>
+        </header>
+        @if (!(data()?.cases?.length)) {
+          <p class="rp-muted">Sin casos en este alcance.</p>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Fallecido</th>
+                @if (isManager()) {
+                  <th>Asesor</th>
+                }
+                <th>Estado</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of data()!.cases; track c.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/cases', c.id]">{{ c.internalCode }}</a>
+                  </td>
+                  <td>{{ c.deceasedName }}</td>
+                  @if (isManager()) {
+                    <td>{{ c.advisor }}</td>
+                  }
+                  <td>{{ c.status }}</td>
+                  <td>{{ c.recoverableValue | currency: 'COP':'symbol-narrow':'1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+      <section class="rp-panel">
+        <header>
+          <h2>Tareas del alcance</h2>
+          <a routerLink="/tasks">Ver tareas →</a>
+        </header>
+        @if (!(data()?.tasks?.length)) {
+          <p class="rp-muted">Sin tareas en este alcance.</p>
+        } @else {
+          <ul class="rp-tasks">
+            @for (t of data()!.tasks; track t.id) {
+              <li [class.is-overdue]="t.overdue">
+                <div>
+                  <strong>{{ t.title }}</strong>
+                  <small>
+                    {{ t.assignee }}
+                    @if (t.caseCode) {
+                      · {{ t.caseCode }}
+                    }
+                  </small>
+                </div>
+                <span>
+                  @if (t.dueDate) {
+                    {{ t.dueDate | date: 'mediumDate' }}
+                  } @else {
+                    Sin fecha
+                  }
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    </div>
+  }
+</section>

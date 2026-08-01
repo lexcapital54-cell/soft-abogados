@@ -1,0 +1,235 @@
+<section class="audit">
+  <header class="audit__header">
+    <div>
+      <p class="audit__eyebrow">
+        <svg lucideShield></svg>
+        Compliance · Solo SUPER_ADMIN
+      </p>
+      <h1>Auditoría y trazabilidad</h1>
+      <p>
+        Registro inmutable de acciones críticas sobre expedientes y la
+        plataforma.
+      </p>
+    </div>
+  </header>
+
+  <form class="audit__filters" (ngSubmit)="applyFilters()">
+    <label>
+      <span>Desde</span>
+      <input
+        type="date"
+        [ngModel]="filterFrom()"
+        (ngModelChange)="filterFrom.set($event)"
+        name="from"
+      />
+    </label>
+    <label>
+      <span>Hasta</span>
+      <input
+        type="date"
+        [ngModel]="filterTo()"
+        (ngModelChange)="filterTo.set($event)"
+        name="to"
+      />
+    </label>
+    <label>
+      <span>Usuario</span>
+      <select
+        [ngModel]="filterUserId()"
+        (ngModelChange)="filterUserId.set($event)"
+        name="userId"
+      >
+        <option value="">Todos</option>
+        @for (u of users(); track u.id) {
+          <option [value]="u.id">
+            {{ u.firstName }} {{ u.lastName }} ({{ roleLabel(u.role) }})
+          </option>
+        }
+      </select>
+    </label>
+    <label>
+      <span>Acción</span>
+      <select
+        [ngModel]="filterAction()"
+        (ngModelChange)="filterAction.set($event)"
+        name="action"
+      >
+        <option value="">Todas</option>
+        @for (a of actions; track a) {
+          <option [value]="a">{{ a }}</option>
+        }
+      </select>
+    </label>
+    <label class="audit__case">
+      <span>ID de caso</span>
+      <input
+        type="text"
+        placeholder="cuid del caso…"
+        [ngModel]="filterCaseId()"
+        (ngModelChange)="filterCaseId.set($event)"
+        name="caseId"
+      />
+    </label>
+    <div class="audit__filter-actions">
+      <button type="submit" class="btn btn--primary">
+        <svg lucideSearch></svg>
+        Filtrar
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="clearFilters()">
+        Limpiar
+      </button>
+    </div>
+  </form>
+
+  @if (error()) {
+    <div class="audit__error" role="alert">{{ error() }}</div>
+  }
+
+  <div class="audit__meta">
+    <span>{{ rangeLabel() }}</span>
+    <div class="audit__pager">
+      <button
+        type="button"
+        class="btn btn--ghost"
+        [disabled]="page() <= 1 || loading()"
+        (click)="prevPage()"
+      >
+        <svg lucideChevronLeft></svg>
+      </button>
+      <span>Pág. {{ page() }} / {{ totalPages() }}</span>
+      <button
+        type="button"
+        class="btn btn--ghost"
+        [disabled]="page() >= totalPages() || loading()"
+        (click)="nextPage()"
+      >
+        <svg lucideChevronRight></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    @if (loading()) {
+      <div class="audit__empty">Cargando registros forenses…</div>
+    } @else if (!hasResults()) {
+      <div class="audit__empty">
+        No hay eventos con los filtros seleccionados.
+      </div>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha / Hora</th>
+            <th>Usuario</th>
+            <th>Acción</th>
+            <th>Entidad</th>
+            <th>Caso</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of items(); track row.id) {
+            <tr>
+              <td class="audit__date">
+                {{ row.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}
+              </td>
+              <td>
+                <div class="audit__user">
+                  <span class="audit__avatar">{{ userInitials(row.user) }}</span>
+                  <div>
+                    @if (row.user) {
+                      <strong
+                        >{{ row.user.firstName }}
+                        {{ row.user.lastName }}</strong
+                      >
+                      <small>{{ roleLabel(row.user.role) }}</small>
+                    } @else {
+                      <strong>Sistema</strong>
+                      <small>sin usuario</small>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span
+                  class="audit__badge"
+                  [attr.data-level]="sensitivity(row.action)"
+                >
+                  {{ row.action }}
+                </span>
+              </td>
+              <td>
+                <div class="audit__entity">
+                  <strong>{{ row.entityType }}</strong>
+                  <small>{{ row.entityId || '—' }}</small>
+                </div>
+              </td>
+              <td>
+                <code class="audit__code">{{ row.caseId || '—' }}</code>
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn--link"
+                  (click)="openDetail(row)"
+                >
+                  Ver detalle
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>
+
+@if (selected(); as detail) {
+  <div class="audit-modal__backdrop" (click)="closeDetail()">
+    <div
+      class="audit-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="audit-detail-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="audit-modal__head">
+        <div>
+          <p class="audit__eyebrow">Inspección JSON</p>
+          <h2 id="audit-detail-title">{{ detail.action }}</h2>
+          <p>
+            {{ detail.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}
+            ·
+            {{ detail.entityType }}
+            @if (detail.ipAddress) {
+              · IP {{ detail.ipAddress }}
+            }
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn--ghost"
+          (click)="closeDetail()"
+          aria-label="Cerrar"
+        >
+          <svg lucideX></svg>
+        </button>
+      </header>
+
+      @if (detailLoading()) {
+        <p class="audit__empty">Cargando detalle…</p>
+      } @else {
+        <div class="audit-modal__grid">
+          <section>
+            <h3>Antes</h3>
+            <pre>{{ formatJson(detail.oldValues) }}</pre>
+          </section>
+          <section>
+            <h3>Después</h3>
+            <pre>{{ formatJson(detail.newValues) }}</pre>
+          </section>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,237 @@
+<div class="lc-app">
+  <aside class="lc-sidebar">
+    <div class="lc-brand">
+      <div class="lc-brand__mark">
+        <img src="brand/logo-lp-icon.png" alt="" />
+      </div>
+      <div>
+        <p class="lc-brand__title">LEX CAPITAL</p>
+        <p class="lc-brand__sub">.com.co</p>
+      </div>
+    </div>
+
+    <nav class="lc-nav">
+      @for (item of navWithBadges(); track item.path) {
+        <a
+          [routerLink]="item.path"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+        >
+          @switch (item.icon) {
+            @case ('layout') {
+              <svg lucideLayoutDashboard></svg>
+            }
+            @case ('briefcase') {
+              <svg lucideBriefcase></svg>
+            }
+            @case ('user') {
+              <svg lucideUser></svg>
+            }
+            @case ('users') {
+              <svg lucideUsers></svg>
+            }
+            @case ('check') {
+              <svg lucideCheckSquare></svg>
+            }
+            @case ('chart') {
+              <svg lucideBarChart3></svg>
+            }
+            @case ('calendar') {
+              <svg lucideCalendar></svg>
+            }
+            @case ('file') {
+              <svg lucideFileText></svg>
+            }
+            @case ('report') {
+              <svg lucideFileBarChart></svg>
+            }
+            @case ('gauge') {
+              <svg lucideGauge></svg>
+            }
+            @case ('building') {
+              <svg lucideBuilding2></svg>
+            }
+            @case ('settings') {
+              <svg lucideSettings></svg>
+            }
+            @case ('shield') {
+              <svg lucideShield></svg>
+            }
+            @case ('git') {
+              <svg lucideGitBranch></svg>
+            }
+            @case ('folder') {
+              <svg lucideFolderOpen></svg>
+            }
+          }
+          <span>{{ item.label }}</span>
+          @if (item.badge) {
+            <em class="lc-nav__badge">{{ item.badge }}</em>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="lc-filters">
+      @if (auth.isSuperAdmin()) {
+        <p class="lc-filters__label">
+          <svg lucideFilter></svg>
+          Filtros rápidos
+        </p>
+        <label class="lc-filter-field">
+          <span>Asesor</span>
+          <select
+            [ngModel]="dashState.filters().advisorId || ''"
+            (ngModelChange)="setAdvisor($event)"
+          >
+            <option value="">Todos</option>
+            @for (a of advisors(); track a.id) {
+              <option [value]="a.id">{{ a.firstName }} {{ a.lastName }}</option>
+            }
+          </select>
+        </label>
+        <label class="lc-filter-field">
+          <span>Estado</span>
+          <select
+            [ngModel]="dashState.filters().status || ''"
+            (ngModelChange)="setStatus($event)"
+          >
+            <option value="">Todos</option>
+            @for (s of statuses; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </label>
+        <label class="lc-filter-field">
+          <span>Etapa</span>
+          <select
+            [ngModel]="dashState.filters().stage || ''"
+            (ngModelChange)="setStage($event)"
+          >
+            <option value="">Todas</option>
+            @for (s of stages; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </label>
+        <label class="lc-filter-field">
+          <span>Nivel de alerta</span>
+          <select
+            [ngModel]="dashState.filters().alertLevel || 'ALL'"
+            (ngModelChange)="setAlert($event)"
+          >
+            <option value="ALL">Todos</option>
+            <option value="RISK">En riesgo</option>
+            <option value="PROCESS">En proceso</option>
+            <option value="OK">Al día</option>
+          </select>
+        </label>
+        <button type="button" class="lc-clear-filters" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+      } @else {
+        <p class="lc-filters__label">Sesión</p>
+        <div class="lc-advisor-summary">
+          <p>{{ roleLabel() }}</p>
+          <strong>{{ displayName() }}</strong>
+          @if (caseTotal() !== null) {
+            <div class="lc-advisor-summary__stats">
+              <span>{{ caseTotal() }} casos visibles</span>
+            </div>
+          }
+        </div>
+      }
+
+      <button type="button" (click)="logout()">
+        <svg lucideEraser></svg>
+        Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <div class="lc-main">
+    <header class="lc-header">
+      <div class="lc-header__row">
+        <div>
+          <h1>{{ pageTitle() }}</h1>
+          <p class="lc-header__sub">{{ pageSubtitle() }}</p>
+        </div>
+
+        <div class="lc-header__right">
+          <div class="lc-bell-wrap">
+            <button
+              class="lc-bell"
+              type="button"
+              aria-label="Notificaciones"
+              (click)="toggleAlerts()"
+            >
+              <svg lucideBell></svg>
+              @if (alertCount() > 0) {
+                <span class="lc-bell__badge">{{ alertCount() }}</span>
+              }
+            </button>
+            @if (alertsOpen()) {
+              <div class="lc-alerts" role="dialog">
+                <header>
+                  <svg lucideAlertTriangle></svg>
+                  <strong>Alertas gerenciales</strong>
+                </header>
+                @if (!alerts().length) {
+                  <p class="lc-alerts__empty">Sin alertas críticas.</p>
+                } @else {
+                  <ul>
+                    @for (a of alerts(); track a.id) {
+                      <li [attr.data-tone]="a.tone">
+                        <i></i>
+                        <div>
+                          <strong>{{ a.title }}</strong>
+                          <span>{{ a.detail }}</span>
+                        </div>
+                      </li>
+                    }
+                  </ul>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="lc-user">
+            <div class="lc-user__identity">
+              <div class="lc-avatar" aria-hidden="true">{{ initials() }}</div>
+              <div class="lc-user__meta">
+                <strong>{{ displayName() }}</strong>
+                <span>{{ roleLabel() }}</span>
+              </div>
+            </div>
+            <button class="lc-logout" type="button" (click)="logout()" title="Cerrar sesión">
+              <svg lucideLogOut></svg>
+              <span>Salir</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="lc-header__actions">
+        @if (auth.isSuperAdmin()) {
+          <a class="lc-btn-primary" routerLink="/cases/new">
+            <svg lucidePlus></svg>
+            Nuevo Caso
+          </a>
+        }
+      </div>
+    </header>
+
+    <main class="lc-content">
+      <router-outlet />
+    </main>
+
+    <footer class="lc-footer">
+      <div class="lc-footer__brand">
+        <img src="brand/logo-lp-icon.png" alt="" />
+        <span>Lex Capital</span>
+      </div>
+      <p>© 2026 LexCapital.com.co — Todos los derechos reservados.</p>
+      <p>Política de privacidad | Términos y condiciones</p>
+    </footer>
+  </div>
+</div>

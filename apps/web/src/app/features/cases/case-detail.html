@@ -1,0 +1,698 @@
+<section class="page">
+  <a routerLink="/cases" class="back">← Volver a Mis Casos</a>
+
+  @if (toast()) {
+    <div class="toast" role="status">{{ toast() }}</div>
+  }
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (loading()) {
+    <p>Cargando expediente…</p>
+  } @else if (item(); as c) {
+    <!-- HEADER -->
+    <header class="top">
+      <div>
+        <p class="crumbs">
+          <a routerLink="/cases">Mis Casos</a>
+          <span>/</span>
+          <strong>{{ c.internalCode }}</strong>
+        </p>
+        <h1>{{ c.deceased.fullName }}</h1>
+        <p class="sub">
+          CC {{ c.deceased.documentNumber }} · Expediente {{ c.fileNumber }}
+        </p>
+      </div>
+      <div class="top-right">
+        <div class="badges">
+          <app-status-badge [status]="statusBadge(c.status)" [label]="c.status === 'ACTIVE' ? 'En gestión' : c.status" />
+          <app-status-badge status="info" [label]="c.stage" />
+          <app-status-badge
+            status="warning"
+            [label]="'Docs ' + docsPercent() + '%'"
+          />
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn-primary" (click)="showAddTask.set(true)">
+            <svg lucidePlus></svg> Nueva tarea
+          </button>
+          <div class="actions-menu">
+            <button type="button" class="btn-actions" (click)="toggleActions()">
+              Acciones ▾
+            </button>
+            @if (actionsOpen()) {
+              <div class="actions-dropdown">
+                <button type="button" (click)="openEditCase()">
+                  <svg lucideEdit2></svg>
+                  Editar datos principales
+                </button>
+                <button
+                  type="button"
+                  (click)="actionsOpen.set(false); showShareEmail.set(true)"
+                >
+                  <svg lucideMail></svg>
+                  Compartir por Correo
+                </button>
+                <button
+                  type="button"
+                  [disabled]="!docsReady()"
+                  [title]="docsReady() ? '' : 'Faltan documentos obligatorios'"
+                  (click)="transferBlocked()"
+                >
+                  <svg lucideAlertTriangle></svg>
+                  Trasladar al Área Jurídica
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- KPI BAR -->
+    <section class="kpi-bar">
+      @for (k of kpis(); track k.key) {
+        <article class="kpi" [class.kpi-danger]="k.danger">
+          <span>{{ k.label }}</span>
+          <strong>
+            @if (k.key === 'semaforo') {
+              <i class="sema-dot" [attr.data-tone]="$any(k).tone"></i>
+            }
+            {{ k.value }}
+          </strong>
+        </article>
+      }
+    </section>
+
+    <!-- BENTO 60/40 -->
+    <section class="bento">
+      <div class="bento-main">
+    <!-- INFO + SEMAFORO + TAREAS (legacy top cards become fallecido only first) -->
+    <section class="grid-3">
+      <article class="card card-span-2">
+        <header class="card-head">
+          <h2>Fallecido</h2>
+          <button type="button" class="ghost" (click)="openEditCase()">
+            <svg lucideEdit2></svg> Editar
+          </button>
+        </header>
+        <div class="deceased-block">
+          <div class="avatar-ribbon" aria-hidden="true">
+            <span>{{ c.deceased.fullName.charAt(0) }}</span>
+          </div>
+          <dl class="info-dl info-dl-2">
+            <div><dt>Nombre</dt><dd>{{ c.deceased.fullName }}</dd></div>
+            <div><dt>Cédula</dt><dd>{{ c.deceased.documentNumber }}</dd></div>
+            <div>
+              <dt>Estado civil</dt>
+              <dd>{{ c.deceased.maritalStatus || '—' }}</dd>
+            </div>
+            <div>
+              <dt>Domicilio</dt>
+              <dd>{{ c.deceased.lastAddress || c.deceased.city || '—' }}</dd>
+            </div>
+            <div>
+              <dt>Ciudad / Dpto</dt>
+              <dd>{{ c.deceased.city || '—' }} / {{ c.deceased.department || '—' }}</dd>
+            </div>
+            <div>
+              <dt>Saldo estimado</dt>
+              <dd>{{ c.recoverableValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="card">
+        <header class="card-head">
+          <h2>Tareas</h2>
+          <button type="button" class="ghost" (click)="showAddTask.set(true)">
+            <svg lucidePlus></svg> Nueva
+          </button>
+        </header>
+        @if (!(c.tasks?.length)) {
+          <p class="empty">Sin tareas abiertas.</p>
+        } @else {
+          <ul class="task-list">
+            @for (t of c.tasks; track t.id) {
+              <li>
+                <div>
+                  <strong>{{ t.title }}</strong>
+                  @if (t.dueDate) {
+                    <span class="muted">{{ t.dueDate | date: 'mediumDate' }}</span>
+                  }
+                </div>
+                <button type="button" class="act ok" (click)="completeTask(t.id)" title="Completar">
+                  <svg lucideCheckCircle></svg>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </article>
+    </section>
+
+    <!-- FAMILIARES + NOTAS -->
+    <section class="grid-23">
+      <article class="card flush">
+        <header class="pad family-head">
+          <div>
+            <h2>Familiares / posibles herederos ({{ c.relatives.length }})</h2>
+            <p class="muted">Incluye SLA de entrega documental y semáforo.</p>
+          </div>
+          <div class="family-head-actions">
+            @if (canApprove()) {
+              <a class="act" routerLink="/cruce-datos">
+                Análisis parentesco (IA)
+              </a>
+            }
+            <button type="button" class="act upload" (click)="showAddRelative.set(!showAddRelative())">
+              <svg lucidePlus></svg> Agregar familiar
+            </button>
+          </div>
+        </header>
+
+        @if (showAddRelative()) {
+          <form class="family-form pad" (ngSubmit)="addRelative()">
+            <div class="field">
+              <label>Nombre</label>
+              <input [(ngModel)]="newFullName" name="nf" required minlength="3" />
+            </div>
+            <div class="field">
+              <label>Cédula</label>
+              <input [(ngModel)]="newDocumentNumber" name="nd" />
+            </div>
+            <div class="field">
+              <label>Parentesco</label>
+              <select [(ngModel)]="newKinship" name="nk">
+                @for (k of kinshipOptions; track k.value) {
+                  <option [value]="k.value">{{ k.label }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label>Celular</label>
+              <input [(ngModel)]="newMobile" name="nm" />
+            </div>
+            <div class="field">
+              <label>SLA docs</label>
+              <input type="date" [(ngModel)]="newSlaDueAt" name="ns" />
+            </div>
+            <div class="field field-action">
+              <button type="submit" class="act upload" [disabled]="savingRelative()">
+                Guardar familiar
+              </button>
+            </div>
+          </form>
+        }
+
+        @if (!c.relatives.length) {
+          <p class="empty pad">Sin familiares registrados.</p>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Parentesco</th>
+                  <th>Contacto</th>
+                  <th>Vencimiento SLA</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of c.relatives; track r.id) {
+                  @let sla = slaOf(r.slaDueAt);
+                  <tr [class.is-pending]="isPendingRelative(r)" [class.row-danger]="sla.tone === 'danger'">
+                    <td>
+                      <strong>{{ r.fullName }}</strong>
+                      @if (isPendingRelative(r)) {
+                        <div class="pending-tag">Datos pendientes</div>
+                      }
+                    </td>
+                    <td>{{ kinshipLabel(r.kinship) }}</td>
+                    <td>
+                      {{ r.mobile || r.phone || '—' }}
+                      <div class="muted">{{ contactLabel(r.contactStatus) }}</div>
+                    </td>
+                    <td>
+                      <button type="button" class="sla-btn" (click)="openSla(r)">
+                        <svg lucideCalendarClock></svg>
+                        {{ r.slaDueAt ? (r.slaDueAt | date: 'mediumDate') : 'Definir SLA' }}
+                      </button>
+                      <div>
+                        <app-status-badge [status]="sla.tone" [label]="sla.label" />
+                      </div>
+                    </td>
+                    <td>
+                      <app-status-badge
+                        [status]="contactBadge(r.contactStatus)"
+                        [label]="contactLabel(r.contactStatus)"
+                      />
+                    </td>
+                    <td>
+                      <div class="actions">
+                        <button type="button" class="act" (click)="openEdit(r)">
+                          <svg lucidePencil></svg>
+                          {{ isPendingRelative(r) ? 'Completar' : 'Editar' }}
+                        </button>
+                        @if (!isPendingRelative(r)) {
+                          <button type="button" class="act upload" (click)="openContact(r.id)">
+                            <svg lucidePhone></svg> Contactar
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+
+                  @if (editPanelId() === r.id) {
+                    <tr class="contact-row">
+                      <td colspan="6">
+                        <div class="contact-panel">
+                          <p class="contact-title">Editar / completar datos de <strong>{{ r.fullName }}</strong></p>
+                          <div class="family-form edit-inline">
+                            <div class="field">
+                              <label>Nombre</label>
+                              <input [(ngModel)]="editFullName" [ngModelOptions]="{ standalone: true }" />
+                            </div>
+                            <div class="field">
+                              <label>Cédula</label>
+                              <input [(ngModel)]="editDocumentNumber" [ngModelOptions]="{ standalone: true }" />
+                            </div>
+                            <div class="field">
+                              <label>Parentesco</label>
+                              <select [(ngModel)]="editKinship" [ngModelOptions]="{ standalone: true }">
+                                @for (k of kinshipOptions; track k.value) {
+                                  <option [value]="k.value">{{ k.label }}</option>
+                                }
+                              </select>
+                            </div>
+                            <div class="field">
+                              <label>Celular</label>
+                              <input [(ngModel)]="editMobile" [ngModelOptions]="{ standalone: true }" />
+                            </div>
+                            <div class="field">
+                              <label>Correo</label>
+                              <input [(ngModel)]="editEmail" [ngModelOptions]="{ standalone: true }" />
+                            </div>
+                          </div>
+                          <div class="actions">
+                            <button type="button" class="act ok" [disabled]="savingEdit()" (click)="saveEdit(r.id)">
+                              Guardar datos
+                            </button>
+                            <button type="button" class="act" (click)="cancelEdit()">Cancelar</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (slaPanelId() === r.id) {
+                    <tr class="contact-row">
+                      <td colspan="6">
+                        <div class="contact-panel">
+                          <p class="contact-title">Reagendar SLA — <strong>{{ r.fullName }}</strong></p>
+                          <div class="contact-fields">
+                            <div class="field">
+                              <label>Nueva fecha</label>
+                              <input type="date" [(ngModel)]="slaDueAt" [ngModelOptions]="{ standalone: true }" />
+                            </div>
+                            <div class="field grow">
+                              <label>Motivo</label>
+                              <textarea rows="2" [(ngModel)]="slaReason" [ngModelOptions]="{ standalone: true }"
+                                placeholder="Justifique el reagendo del compromiso documental…"></textarea>
+                            </div>
+                          </div>
+                          <div class="actions">
+                            <button type="button" class="act ok" (click)="saveSla(r.id)">Guardar SLA</button>
+                            <button type="button" class="act" (click)="slaPanelId.set(null)">Cancelar</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+
+                  @if (contactPanelId() === r.id) {
+                    <tr class="contact-row">
+                      <td colspan="6">
+                        <div class="contact-panel">
+                          <p class="contact-title">Registrar contacto con <strong>{{ r.fullName }}</strong></p>
+                          <div class="contact-fields">
+                            <div class="field">
+                              <label>Canal</label>
+                              <select [ngModel]="contactChannel()" (ngModelChange)="contactChannel.set($event)" [ngModelOptions]="{ standalone: true }">
+                                <option value="CALL">Llamada</option>
+                                <option value="WHATSAPP">WhatsApp</option>
+                                <option value="EMAIL">Correo</option>
+                                <option value="COMMENT">Otro</option>
+                              </select>
+                            </div>
+                            <div class="field grow">
+                              <label>Nota</label>
+                              <textarea rows="3" [ngModel]="contactNote()" (ngModelChange)="contactNote.set($event)" [ngModelOptions]="{ standalone: true }"></textarea>
+                            </div>
+                          </div>
+                          <div class="actions">
+                            <button type="button" class="act ok" [disabled]="contactingId() === r.id" (click)="submitContact(r.id, r.fullName)">
+                              Guardar y marcar contactado
+                            </button>
+                            <button type="button" class="act" (click)="cancelContact()">Cancelar</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+
+      <article class="card notes-card">
+        <header class="card-head">
+          <h2><svg lucideStickyNote></svg> Cuaderno de notas estratégicas</h2>
+        </header>
+        <textarea
+          class="notes-area"
+          rows="12"
+          [(ngModel)]="strategicNotesDraft"
+          placeholder="Apreciaciones cualitativas del caso: familia conflictiva, posible sucesión contenciosa, acuerdos verbales…"
+        ></textarea>
+        <button type="button" class="act upload" [disabled]="savingNotes()" (click)="saveNotes()">
+          @if (savingNotes()) {
+            <svg lucideLoaderCircle class="spin"></svg>
+          } @else {
+            <svg lucideStickyNote></svg>
+          }
+          Guardar nota
+        </button>
+      </article>
+    </section><!-- /.grid-23 -->
+
+      </div><!-- /.bento-main -->
+
+      <aside class="bento-side">
+        <article class="card">
+          <header class="card-head">
+            <h2>Resumen del caso</h2>
+          </header>
+          <p class="muted">
+            Asesor:
+            @if (c.advisor) {
+              <strong>{{ c.advisor.firstName }} {{ c.advisor.lastName }}</strong>
+            } @else {
+              <strong>Sin asignar</strong>
+            }
+            · Entidad: <strong>{{ entityName() }}</strong>
+          </p>
+          <div class="advance-donut-wrap">
+            <div class="advance-donut" [style.background]="donutAdvance()">
+              <div class="advance-hole">
+                <strong>{{ advancePct() }}%</strong>
+                <span>avance</span>
+              </div>
+            </div>
+            <ul class="advance-meta">
+              <li>Docs {{ docsPercent() }}%</li>
+              <li>Gestión {{ progress().management }}%</li>
+              <li>Judicial {{ progress().judicial }}%</li>
+              <li>Tareas abiertas {{ openTasksCount() }}</li>
+            </ul>
+          </div>
+        </article>
+
+      <article class="card">
+        <header class="card-head">
+          <h2><svg lucideClock></svg> Observaciones / bitácora</h2>
+        </header>
+        <div class="log-form">
+          <textarea
+            rows="3"
+            [(ngModel)]="activityText"
+            placeholder="Ej: Llamada realizada, el cliente dice que fue a la notaría…"
+          ></textarea>
+          <label class="check">
+            <input type="checkbox" [(ngModel)]="createCommitment" />
+            Generar compromiso
+          </label>
+          @if (createCommitment) {
+            <div class="commitment-fields">
+              <input [(ngModel)]="commitmentTitle" placeholder="Título del compromiso" />
+              <input type="date" [(ngModel)]="commitmentDueAt" />
+            </div>
+          }
+          <button type="button" class="act upload" [disabled]="savingActivity()" (click)="registerActivity()">
+            Registrar acción
+          </button>
+        </div>
+        @if (!c.activities.length) {
+          <p class="empty">Sin actividad registrada.</p>
+        } @else {
+          <ul class="timeline">
+            @for (a of c.activities; track a.id) {
+              <li>
+                <time>{{ a.createdAt | date: 'short' }}</time>
+                <strong>{{ a.title }}</strong>
+                @if (a.description) {
+                  <span>{{ a.description }}</span>
+                }
+                @if (a.user) {
+                  <span class="muted">{{ a.user.firstName }} {{ a.user.lastName }}</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+      </article>
+
+      <article class="card">
+        <header class="card-head">
+          <h2><svg lucideBanknote></svg> Resumen financiero</h2>
+        </header>
+        <dl class="info-dl">
+          <div>
+            <dt>Saldo estimado</dt>
+            <dd>{{ c.recoverableValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+          </div>
+          <div>
+            <dt>Abonos / cobrado</dt>
+            <dd>{{ (c.collectedFees || 0) | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+          </div>
+          <div>
+            <dt>Honorarios estimados</dt>
+            <dd>{{ estimatedFeesLive() | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+          </div>
+        </dl>
+        <p class="muted fees-label">Selector de honorarios</p>
+        <div class="fees-toggle">
+          <button
+            type="button"
+            [class.is-active]="feesPercent() === 30"
+            [disabled]="savingFees()"
+            (click)="setFeesPercent(30)"
+          >
+            30% Estándar
+          </button>
+          <button
+            type="button"
+            [class.is-active]="feesPercent() === 50"
+            [disabled]="savingFees()"
+            (click)="setFeesPercent(50)"
+          >
+            50% Sucesión notarial/judicial
+          </button>
+        </div>
+      </article>
+      </aside><!-- /.bento-side -->
+    </section><!-- /.bento -->
+
+    <!-- Documentación a ancho completo (sin scroll horizontal) -->
+    <section class="docs-section">
+      <article class="card flush">
+        <header class="pad">
+          <h2><svg lucideFileText></svg> Documentación solicitada</h2>
+        </header>
+        <nav class="mini-tabs">
+          <button type="button" [class.is-active]="docTab() === 'cliente'" (click)="docTab.set('cliente')">
+            Cliente / Legal
+          </button>
+          <button type="button" [class.is-active]="docTab() === 'familiares'" (click)="docTab.set('familiares')">
+            Familiares
+          </button>
+        </nav>
+
+        @if (docTab() === 'cliente') {
+          <div class="table-wrap docs-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Documento</th>
+                  <th>Requerido</th>
+                  <th>Estado</th>
+                  <th>SLA</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of checklist()?.cliente ?? []; track d.id) {
+                  @let sla = slaOf(d.slaDueAt, docDelivered(d));
+                  <tr [class.row-danger]="sla.tone === 'danger'">
+                    <td><strong>{{ d.name }}</strong></td>
+                    <td>
+                      @if (d.isRequired) {
+                        <span class="req">Sí</span>
+                      } @else {
+                        <span class="opt">No</span>
+                      }
+                    </td>
+                    <td>
+                      <app-status-badge [status]="statusBadge(d.status)" [label]="statusLabel(d.status)" />
+                    </td>
+                    <td>
+                      <app-status-badge [status]="sla.tone" [label]="sla.label" />
+                    </td>
+                    <td>
+                      <div class="actions">
+                        <label class="act upload">
+                          <svg lucideUpload></svg>
+                          @if (uploadingId() === d.id) {
+                            <svg lucideLoaderCircle class="spin"></svg>
+                          } @else {
+                            Cargar
+                          }
+                          <input type="file" accept=".pdf,image/*" hidden (change)="onFilePick(d, $event)" />
+                        </label>
+                        @if (d.storageKey || d.storageUrl) {
+                          <button type="button" class="act" (click)="openViewer(d)">
+                            <svg lucideEye></svg> Ver
+                          </button>
+                        }
+                        @if (canApprove() && d.status === 'CARGADO') {
+                          <button type="button" class="act ok" (click)="approve(d)">
+                            <svg lucideCheckCircle></svg>
+                          </button>
+                          <button type="button" class="act danger" (click)="reject(d)">Rechazar</button>
+                        }
+                        @if (canDelete() && (d.storageKey || d.storageUrl)) {
+                          <button type="button" class="act danger" (click)="remove(d)">
+                            <svg lucideTrash2></svg>
+                          </button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="table-wrap docs-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Familiar</th>
+                  <th>Documento</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of checklist()?.familiares ?? []; track d.id) {
+                  <tr>
+                    <td>
+                      <strong>{{ d.relative?.fullName || '—' }}</strong>
+                      <div class="muted">{{ d.relative?.kinship }}</div>
+                    </td>
+                    <td>{{ d.name }}</td>
+                    <td>
+                      <app-status-badge [status]="statusBadge(d.status)" [label]="statusLabel(d.status)" />
+                    </td>
+                    <td>
+                      <div class="actions">
+                        <label class="act upload">
+                          <svg lucideUpload></svg> Cargar
+                          <input type="file" accept=".pdf,image/*" hidden (change)="onFilePick(d, $event)" />
+                        </label>
+                        @if (d.storageKey || d.storageUrl) {
+                          <button type="button" class="act" (click)="openViewer(d)">
+                            <svg lucideEye></svg> Ver
+                          </button>
+                        }
+                        @if (canApprove() && d.status === 'CARGADO') {
+                          <button type="button" class="act ok" (click)="approve(d)">
+                            <svg lucideCheckCircle></svg>
+                          </button>
+                          <button type="button" class="act danger" (click)="reject(d)">Rechazar</button>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </article>
+    </section>
+
+    <!-- MODAL EDIT CASE -->
+    @if (showEditCase()) {
+      <div class="modal-backdrop" (click)="showEditCase.set(false)"></div>
+      <div class="modal" role="dialog">
+        <h3>Editar datos principales</h3>
+        <div class="field">
+          <label>Saldo estimado (COP)</label>
+          <input type="number" [(ngModel)]="editRecoverable" />
+        </div>
+        <div class="field">
+          <label>Etapa</label>
+          <select [(ngModel)]="editStage">
+            @for (s of stageOptions; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Abonos / cobrado</label>
+          <input type="number" [(ngModel)]="editCollected" />
+        </div>
+        <div class="actions">
+          <button type="button" class="act ok" [disabled]="savingCase()" (click)="saveEditCase()">
+            Guardar
+          </button>
+          <button type="button" class="act" (click)="showEditCase.set(false)">Cancelar</button>
+        </div>
+      </div>
+    }
+
+    <app-document-viewer-modal
+      [document]="viewingDoc()"
+      [caseId]="caseId()"
+      [caseCode]="c.internalCode"
+      [canApprove]="canApprove()"
+      [canDownload]="true"
+      (closed)="closeViewer()"
+      (approved)="onViewerApproved($event)"
+      (rejected)="onViewerRejected($event)"
+    />
+
+    <app-task-assigner-modal
+      [open]="showAddTask()"
+      [caseId]="caseId()"
+      [caseLabel]="c.internalCode + ' — ' + c.deceased.fullName"
+      (closed)="showAddTask.set(false)"
+      (created)="onTaskCreated()"
+    />
+
+    <app-share-email-modal
+      [open]="showShareEmail()"
+      [caseId]="caseId()"
+      [caseLabel]="c.internalCode"
+      [deceasedName]="c.deceased.fullName"
+      (closed)="showShareEmail.set(false)"
+      (sent)="onEmailSent($event)"
+    />
+  }
+</section>

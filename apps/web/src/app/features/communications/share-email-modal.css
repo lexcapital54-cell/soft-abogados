@@ -1,0 +1,225 @@
+.em-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 19, 43, 0.5);
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.em-modal {
+  width: min(640px, 100%);
+  max-height: 92vh;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid rgba(11, 19, 43, 0.12);
+  color: #0b132b;
+}
+
+.em-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 0.75rem;
+  border-bottom: 1px solid rgba(11, 19, 43, 0.08);
+}
+
+.em-eyebrow {
+  margin: 0 0 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c5a866;
+}
+
+.em-eyebrow svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.em-head h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.em-case {
+  margin: 0.2rem 0 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.em-icon {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.em-icon svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.em-error {
+  margin: 0.75rem 1.1rem 0;
+  padding: 0.65rem 0.8rem;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #9f1239;
+  font-size: 0.88rem;
+}
+
+.em-loading {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.em-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.em-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.em-form input,
+.em-form select,
+.em-form textarea {
+  font: inherit;
+  font-weight: 400;
+  color: #0b132b;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+}
+
+.em-form input.is-ro {
+  background: #f8fafc;
+}
+
+.em-tabs {
+  display: flex;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+}
+
+.em-tabs button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 0;
+  background: #fff;
+  padding: 0.55rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.em-tabs button svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.em-tabs button.is-on {
+  background: #0b132b;
+  color: #fff;
+}
+
+.em-attach {
+  max-height: 180px;
+  overflow: auto;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+  padding: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.em-check {
+  display: flex;
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-weight: 400 !important;
+  color: #0b132b !important;
+  font-size: 0.85rem !important;
+}
+
+.em-check strong {
+  display: block;
+}
+
+.em-check small {
+  color: #64748b;
+}
+
+.em-muted,
+.em-count {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.em-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.em-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+  background: #fff;
+  padding: 0.55rem 0.85rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.em-btn.primary {
+  background: #0b132b;
+  color: #fff;
+  border-color: #0b132b;
+}
+
+.em-btn.ghost {
+  background: #fff;
+}
+
+.em-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.em-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

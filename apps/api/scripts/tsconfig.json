@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "noEmit": true,
+    "strict": true
+  },
+  "include": ["./**/*.ts", "../src/common/utils/sanitize-folder-name.ts"]
+}

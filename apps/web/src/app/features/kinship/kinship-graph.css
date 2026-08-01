@@ -1,0 +1,88 @@
+.kg-empty {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-size: 0.92rem;
+  padding: 1.5rem;
+  text-align: center;
+  background:
+    linear-gradient(180deg, rgba(197, 168, 102, 0.08), transparent 40%),
+    #f8fafc;
+  border: 1px dashed rgba(11, 19, 43, 0.18);
+}
+
+.kg-wrap {
+  overflow: auto;
+  background:
+    radial-gradient(circle at top, rgba(197, 168, 102, 0.12), transparent 45%),
+    #f8fafc;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+  min-height: 360px;
+}
+
+.kg-svg {
+  width: 100%;
+  min-height: 360px;
+  display: block;
+}
+
+.kg-edge {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 2;
+}
+
+.kg-edge[data-degree='1'] {
+  stroke: #c5a866;
+  stroke-width: 2.5;
+}
+
+.kg-edge[data-degree='2'] {
+  stroke: #3b82f6;
+}
+
+.kg-edge[data-degree='3'] {
+  stroke: #64748b;
+  stroke-dasharray: 5 4;
+}
+
+.kg-edge-label {
+  fill: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.kg-node {
+  fill: #fff;
+  stroke: #0b132b;
+  stroke-width: 1.4;
+}
+
+.kg-node.is-titular {
+  fill: #0b132b;
+}
+
+.kg-node.is-hit {
+  stroke: #c5a866;
+  stroke-width: 2.4;
+}
+
+.kg-node__name {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #0b132b;
+}
+
+.kg-node__meta {
+  font-size: 10px;
+  fill: #64748b;
+}
+
+.kg-node__name.is-titular-text {
+  fill: #f8fafc;
+}
+
+.kg-node__meta.is-titular-text {
+  fill: rgba(248, 250, 252, 0.72);
+}

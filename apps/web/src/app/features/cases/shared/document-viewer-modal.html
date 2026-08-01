@@ -1,0 +1,150 @@
+@if (open && document; as doc) {
+  <div class="dv-backdrop" (click)="close()" role="presentation">
+    <div
+      class="dv-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dv-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="dv-toolbar">
+        <div class="dv-toolbar__id">
+          <span class="dv-toolbar__icon"><svg lucideFileText></svg></span>
+          <div>
+            <p class="dv-eyebrow">Visor de expediente</p>
+            <h2 id="dv-title">{{ title }}</h2>
+            <p class="dv-sub">
+              {{ fileName }}
+              ·
+              <span [attr.data-status]="doc.status">{{ doc.status }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="dv-toolbar__controls">
+          @if (isPdf()) {
+            <div class="dv-group" aria-label="Zoom">
+              <button type="button" class="dv-btn" (click)="zoomOut()" title="Alejar">
+                <svg lucideZoomOut></svg>
+              </button>
+              <span class="dv-scale">{{ (scale() * 100) | number: '1.0-0' }}%</span>
+              <button type="button" class="dv-btn" (click)="zoomIn()" title="Acercar">
+                <svg lucideZoomIn></svg>
+              </button>
+              <button type="button" class="dv-btn" (click)="fitWidth()" title="Ajustar">
+                <svg lucideMaximize2></svg>
+              </button>
+            </div>
+
+            <div class="dv-group" aria-label="Paginación">
+              <button
+                type="button"
+                class="dv-btn"
+                [disabled]="page() <= 1"
+                (click)="prevPage()"
+                title="Página anterior"
+              >
+                <svg lucideChevronLeft></svg>
+              </button>
+              <span class="dv-page">{{ page() }} / {{ numPages() || '—' }}</span>
+              <button
+                type="button"
+                class="dv-btn"
+                [disabled]="page() >= numPages()"
+                (click)="nextPage()"
+                title="Página siguiente"
+              >
+                <svg lucideChevronRight></svg>
+              </button>
+            </div>
+          }
+
+          <button type="button" class="dv-btn" (click)="rotate()" title="Rotar 90°">
+            <svg lucideRotateCw></svg>
+            <span>Rotar</span>
+          </button>
+
+          @if (canDownload) {
+            <button
+              type="button"
+              class="dv-btn"
+              [disabled]="!blobReady()"
+              (click)="download()"
+              title="Descargar"
+            >
+              <svg lucideDownload></svg>
+              <span>Descargar</span>
+            </button>
+          }
+
+          <button type="button" class="dv-btn dv-btn--ghost" (click)="close()" aria-label="Cerrar">
+            <svg lucideX></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="dv-body">
+        @if (loading()) {
+          <div class="dv-state">
+            <svg lucideLoaderCircle class="spin"></svg>
+            <p>Obteniendo documento seguro…</p>
+          </div>
+        } @else if (error()) {
+          <div class="dv-state dv-state--error">
+            <svg lucideAlertTriangle></svg>
+            <p>{{ error() }}</p>
+            <button type="button" class="dv-btn" (click)="close()">Cerrar</button>
+          </div>
+        } @else if (!isPdf() && imageUrl()) {
+          <div class="dv-canvas-wrap" [style.transform]="'rotate(' + rotation() + 'deg)'">
+            <img [src]="imageUrl()!" [alt]="fileName" class="dv-image" />
+          </div>
+        } @else {
+          <div class="dv-canvas-wrap">
+            @if (rendering()) {
+              <div class="dv-render-hint">
+                <svg lucideLoaderCircle class="spin"></svg>
+              </div>
+            }
+            <canvas #canvas class="dv-canvas"></canvas>
+          </div>
+        }
+      </div>
+
+      @if (canApprove && !loading() && !error() && canReviewStatus()) {
+        <footer class="dv-actions">
+          <div>
+            <p class="dv-eyebrow">Panel de auditoría / SLA</p>
+            <p class="dv-actions__hint">
+              La decisión queda registrada en el Audit Trail y actualiza el
+              semáforo documental del caso.
+            </p>
+          </div>
+          <div class="dv-actions__btns">
+            <button
+              type="button"
+              class="dv-action dv-action--ok"
+              [disabled]="acting()"
+              (click)="approve()"
+            >
+              @if (acting()) {
+                <svg lucideLoaderCircle class="spin"></svg>
+              } @else {
+                <svg lucideCheckCircle></svg>
+              }
+              Validar y Aprobar
+            </button>
+            <button
+              type="button"
+              class="dv-action dv-action--danger"
+              [disabled]="acting()"
+              (click)="reject()"
+            >
+              Rechazar / Ilegible
+            </button>
+          </div>
+        </footer>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,245 @@
+<section class="ind">
+  <header class="ind-hero">
+    <div>
+      <p class="ind-eyebrow"><svg lucideGauge></svg> KPIs · Solo SUPER_ADMIN</p>
+      <h1>Indicadores y avance de casos</h1>
+      <p>
+        Eficiencia SLA, carga operativa y proactividad por asesor. Use el rango
+        de fechas y el filtro para hacer drill-down.
+      </p>
+    </div>
+    <button type="button" class="ind-btn" (click)="load()" [disabled]="loading()">
+      <svg lucideRefreshCw></svg> Actualizar
+    </button>
+  </header>
+
+  <div class="ind-filters">
+    <label>
+      Desde
+      <input type="date" [ngModel]="from()" (ngModelChange)="from.set($event)" />
+    </label>
+    <label>
+      Hasta
+      <input type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" />
+    </label>
+    <label>
+      Asesor
+      <select [ngModel]="advisorId()" (ngModelChange)="advisorId.set($event)">
+        <option value="">Todos los asesores</option>
+        @for (a of data()?.advisors ?? []; track a.id) {
+          <option [value]="a.id">{{ a.name }}</option>
+        }
+      </select>
+    </label>
+    <button type="button" class="ind-btn primary" (click)="applyFilters()">
+      Aplicar filtros
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="ind-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading() && !data()) {
+    <div class="ind-empty">
+      <svg lucideLoaderCircle class="spin"></svg>
+      Calculando indicadores…
+    </div>
+  }
+
+  @if (scorecards(); as sc) {
+    <section class="ind-cards">
+      <article>
+        <header><svg lucideBriefcase></svg> Casos activos</header>
+        <strong>{{ sc.activeCases.value | number }}</strong>
+        <em [class]="deltaClass(sc.activeCases.deltaPct)">
+          {{ sc.activeCases.deltaPct > 0 ? '+' : '' }}{{ sc.activeCases.deltaPct | number: '1.0-1' }}%
+          vs periodo anterior
+        </em>
+      </article>
+      <article class="risk">
+        <header><svg lucideAlertTriangle></svg> Tareas vencidas globales</header>
+        <strong>{{ sc.overdueTasks.value | number }}</strong>
+        <em [class]="deltaClass(-sc.overdueTasks.deltaPct)">
+          {{ sc.overdueTasks.deltaPct > 0 ? '+' : '' }}{{ sc.overdueTasks.deltaPct | number: '1.0-1' }}%
+          vs periodo anterior
+        </em>
+      </article>
+      <article>
+        <header><svg lucideTrendingUp></svg> Tasa de cierre (periodo)</header>
+        <strong>{{ sc.weeklyClosureRate.value | number: '1.0-1' }}%</strong>
+        <em [class]="deltaClass(sc.weeklyClosureRate.deltaPct)">
+          {{ sc.weeklyClosureRate.deltaPct > 0 ? '+' : '' }}{{ sc.weeklyClosureRate.deltaPct | number: '1.0-1' }}%
+          vs periodo anterior
+        </em>
+      </article>
+    </section>
+
+    <section class="ind-charts">
+      <article class="ind-panel">
+        <header>
+          <h2>Desempeño SLA por asesor</h2>
+          <p>Barras apiladas: a tiempo (emerald) vs tarde (rose)</p>
+        </header>
+        <div class="chart-box">
+          <canvas #slaCanvas></canvas>
+        </div>
+      </article>
+      <article class="ind-panel">
+        <header>
+          <h2>Cierre de tareas (burn-down)</h2>
+          <p>Tendencia diaria de completadas en el rango</p>
+        </header>
+        <div class="chart-box">
+          <canvas #burnCanvas></canvas>
+        </div>
+      </article>
+      <article class="ind-panel">
+        <header>
+          <h2>Casos por etapa</h2>
+          <p>Distribución procesal actual</p>
+        </header>
+        <div class="chart-box chart-box--donut">
+          <canvas #donutCanvas></canvas>
+        </div>
+      </article>
+    </section>
+
+    <section class="ind-panel ind-table-wrap">
+      <header>
+        <h2>Clasificación de asesores</h2>
+        <p>Eficiencia, carga y proactividad</p>
+      </header>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Asesor</th>
+              <th>Casos a cargo</th>
+              <th>Cerrados</th>
+              <th>Pendientes</th>
+              <th>Vencidas</th>
+              <th>% Eficiencia</th>
+              <th>Prom. resolución</th>
+              <th>Proactividad</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of leaderboard(); track row.advisorId) {
+              <tr>
+                <td>
+                  <strong>{{ row.name }}</strong>
+                  <small>{{ row.email }}</small>
+                </td>
+                <td>{{ row.casesAssigned }}</td>
+                <td>{{ row.casesClosed }}</td>
+                <td>{{ row.pendingTasks }}</td>
+                <td [class.is-bad]="row.overdueTasks > 0">{{ row.overdueTasks }}</td>
+                <td>
+                  <span
+                    class="eff"
+                    [class.ok]="row.efficiencyPct >= 80"
+                    [class.warn]="row.efficiencyPct >= 60 && row.efficiencyPct < 80"
+                    [class.bad]="row.efficiencyPct < 60"
+                  >
+                    {{ row.efficiencyPct | number: '1.0-1' }}%
+                  </span>
+                </td>
+                <td>
+                  {{ row.avgResolutionDays != null ? (row.avgResolutionDays | number: '1.0-1') + ' d' : '—' }}
+                </td>
+                <td>{{ row.proactivityPct | number: '1.0-1' }}%</td>
+                <td>
+                  <button
+                    type="button"
+                    class="ind-mini"
+                    (click)="openDetail(row.advisorId)"
+                  >
+                    <svg lucideEye></svg> Ver detalle
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+</section>
+
+@if (detailOpen()) {
+  <div class="ind-backdrop" (click)="closeDetail()" role="presentation">
+    <div class="ind-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header>
+        <div>
+          <h2>Detalle del asesor</h2>
+          @if (detail(); as d) {
+            <p>{{ d.advisor.name }} · {{ d.advisor.email }}</p>
+          }
+        </div>
+        <button type="button" class="ind-icon" (click)="closeDetail()" aria-label="Cerrar">
+          <svg lucideX></svg>
+        </button>
+      </header>
+
+      @if (detailLoading()) {
+        <div class="ind-empty"><svg lucideLoaderCircle class="spin"></svg> Cargando…</div>
+      } @else if (detailError()) {
+        <div class="ind-error">{{ detailError() }}</div>
+      } @else if (detail(); as d) {
+        <p class="ind-muted">Tareas abiertas: <strong>{{ d.openTasksCount }}</strong></p>
+
+        <h3>Casos que afectan la métrica</h3>
+        @if (!d.impactingCases.length) {
+          <p class="ind-muted">Sin casos críticos en el alcance.</p>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                <th>Caso</th>
+                <th>Fallecido</th>
+                <th>Estado</th>
+                <th>Abiertas</th>
+                <th>Vencidas</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of d.impactingCases; track c.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/cases', c.id]" (click)="closeDetail()">
+                      {{ c.internalCode }}
+                    </a>
+                  </td>
+                  <td>{{ c.deceasedName }}</td>
+                  <td>{{ c.status }}</td>
+                  <td>{{ c.openTasks }}</td>
+                  <td [class.is-bad]="c.overdueTasks > 0">{{ c.overdueTasks }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        <h3>Tareas vencidas (SLA crítico)</h3>
+        @if (!d.overdueTasks.length) {
+          <p class="ind-muted">Sin tareas vencidas.</p>
+        } @else {
+          <ul class="ind-list">
+            @for (t of d.overdueTasks; track t.id) {
+              <li>
+                <strong>{{ t.title }}</strong>
+                <small>
+                  {{ t.caseCode || 'Sin caso' }}
+                  · vence
+                  {{ t.dueDate ? (t.dueDate | date: 'mediumDate') : '—' }}
+                </small>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  </div>
+}

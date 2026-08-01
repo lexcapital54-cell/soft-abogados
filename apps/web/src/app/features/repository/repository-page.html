@@ -1,0 +1,137 @@
+<section class="repo">
+  <header class="repo-hero">
+    <div>
+      <p class="repo-eyebrow"><svg lucideFolderOpen></svg> Compartido · Todo el equipo</p>
+      <h1>Carpeta Corporativa</h1>
+      <p>
+        Plantillas, portafolio y documentos legales de LEX CAPITAL. Disponibles
+        al compartir correos desde cualquier expediente.
+      </p>
+    </div>
+    <button type="button" class="repo-btn" (click)="load()" [disabled]="loading()">
+      <svg lucideRefreshCw></svg> Actualizar
+    </button>
+  </header>
+
+  @if (toast()) {
+    <div class="repo-toast" role="status">{{ toast() }}</div>
+  }
+  @if (error()) {
+    <div class="repo-error" role="alert">{{ error() }}</div>
+  }
+
+  <section
+    class="repo-drop"
+    [class.is-over]="dragOver"
+    (dragover)="$event.preventDefault(); dragOver = true"
+    (dragleave)="dragOver = false"
+    (drop)="onDrop($event)"
+  >
+    <svg lucideUpload></svg>
+    <div>
+      <strong>Subir documento corporativo (PDF)</strong>
+      <p>Arrastre aquí o seleccione un archivo</p>
+    </div>
+    <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" />
+  </section>
+
+  <div class="repo-upload-form">
+    <label>
+      Nombre
+      <input [(ngModel)]="nombre" name="nombre" placeholder="Ej: Carta de presentación" />
+    </label>
+    <label>
+      Categoría
+      <select [(ngModel)]="categoria" name="categoria">
+        <option value="PLANTILLA">Plantilla</option>
+        <option value="PORTAFOLIO">Portafolio</option>
+        <option value="LEGAL">Legal</option>
+      </select>
+    </label>
+    <p class="repo-file-name">
+      {{ selectedFile ? selectedFile.name : 'Ningún archivo seleccionado' }}
+    </p>
+    <button
+      type="button"
+      class="repo-btn primary"
+      [disabled]="uploading() || !selectedFile"
+      (click)="upload()"
+    >
+      @if (uploading()) {
+        <svg lucideLoaderCircle class="spin"></svg>
+      }
+      Subir a repositorio
+    </button>
+  </div>
+
+  <div class="repo-filters">
+    <label>
+      Categoría
+      <select
+        [ngModel]="filterCat()"
+        (ngModelChange)="filterCat.set($event); load()"
+      >
+        <option value="">Todas</option>
+        <option value="PLANTILLA">Plantilla</option>
+        <option value="PORTAFOLIO">Portafolio</option>
+        <option value="LEGAL">Legal</option>
+      </select>
+    </label>
+    <label>
+      Buscar
+      <input
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event)"
+        (keyup.enter)="load()"
+        placeholder="Nombre…"
+      />
+    </label>
+    <button type="button" class="repo-btn" (click)="load()">Filtrar</button>
+  </div>
+
+  @if (loading()) {
+    <div class="repo-empty"><svg lucideLoaderCircle class="spin"></svg> Cargando…</div>
+  } @else if (!items().length) {
+    <div class="repo-empty">No hay documentos en el repositorio.</div>
+  } @else {
+    <div class="repo-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Tamaño</th>
+            <th>Subido por</th>
+            <th>Fecha</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of items(); track d.id) {
+            <tr>
+              <td><strong>{{ d.nombre }}</strong></td>
+              <td><span class="repo-tag">{{ d.categoria }}</span></td>
+              <td>{{ kb(d.fileSize) }}</td>
+              <td>
+                {{
+                  d.subidoPor
+                    ? d.subidoPor.firstName + ' ' + d.subidoPor.lastName
+                    : '—'
+                }}
+              </td>
+              <td>{{ d.createdAt | date: 'mediumDate' }}</td>
+              <td class="repo-actions">
+                <button type="button" class="repo-icon" title="Descargar" (click)="download(d)">
+                  <svg lucideDownload></svg>
+                </button>
+                <button type="button" class="repo-icon danger" title="Desactivar" (click)="remove(d)">
+                  <svg lucideTrash2></svg>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

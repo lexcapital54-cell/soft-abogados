@@ -1,0 +1,59 @@
+@if (!graph || !graph.nodes.length) {
+  <div class="kg-empty">
+    Seleccione un hallazgo para visualizar el árbol de consanguinidad.
+  </div>
+} @else {
+  <div class="kg-wrap">
+    <svg
+      class="kg-svg"
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      role="img"
+      aria-label="Árbol genealógico del cruce"
+    >
+      @for (e of graph.edges; track e.id) {
+        <path
+          class="kg-edge"
+          [attr.d]="edgePath(e)"
+          [attr.data-degree]="e.degree"
+        />
+        <text class="kg-edge-label" [attr.x]="midX(e)" [attr.y]="midY(e)">
+          {{ e.label }}
+        </text>
+      }
+
+      @for (n of graph.nodes; track n.id) {
+        <g [attr.transform]="'translate(' + n.x + ' ' + n.y + ')'">
+          <rect
+            class="kg-node"
+            [class.is-titular]="n.source === 'TITULAR'"
+            [class.is-hit]="isHighlight(n.id)"
+            x="-84"
+            y="-34"
+            width="168"
+            height="68"
+            rx="2"
+          />
+          <text
+            class="kg-node__name"
+            [class.is-titular-text]="n.source === 'TITULAR'"
+            y="-6"
+            text-anchor="middle"
+          >
+            {{ n.label.length > 22 ? (n.label | slice: 0:22) + '…' : n.label }}
+          </text>
+          <text
+            class="kg-node__meta"
+            [class.is-titular-text]="n.source === 'TITULAR'"
+            y="14"
+            text-anchor="middle"
+          >
+            {{ n.cedula ? 'CC ' + n.cedula : 'Sin cédula' }}
+            @if (n.anioNacimiento) {
+              · {{ n.anioNacimiento }}
+            }
+          </text>
+        </g>
+      }
+    </svg>
+  </div>
+}

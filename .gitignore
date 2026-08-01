@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+dist/
+build/
+.tmp/
+.cache/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+apps/api/.env
+apps/web/.env
+
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+
+# Logs / coverage
+logs/
+*.log
+coverage/
+.nyc_output/
+
+# Angular
+apps/web/.angular/
+
+# Uploads
+uploads/
+tmp/
+
+# Datos sensibles / operativos (no subir a GitHub)
+Casos y documentos/
+BASE_DE_DATOS_REBALANCEADA.csv
+BASE_DE_DATOS_REBALANCEADA.xlsx
+*.local.xlsx
+*.local.csv

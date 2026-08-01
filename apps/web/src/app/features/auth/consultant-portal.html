@@ -1,0 +1,91 @@
+<main class="portal">
+  <header class="portal__header">
+    <div class="portal__shield">
+      <svg lucideShield></svg>
+    </div>
+    <p class="portal__brand">
+      <span>LEX</span> CAPITAL
+    </p>
+    <h1>Portal Operativo de Consultores</h1>
+    <p class="portal__sub">
+      Seleccione su perfil para ingresar — acceso seguro a casos asignados
+    </p>
+  </header>
+
+  <section class="portal__grid">
+    @for (c of consultants; track c.id) {
+      <article
+        class="card"
+        [class.card--active]="isSelected(c.id)"
+        [class.card--vacant]="c.vacant"
+        [class.card--disabled]="c.vacant || c.status !== 'ACTIVE'"
+        (click)="select(c)"
+      >
+        @if (c.vacant) {
+          <div class="card__avatar card__avatar--vacant">
+            <svg lucideUserX></svg>
+          </div>
+          <span class="badge">Vacante disponible</span>
+        } @else {
+          <div class="card__avatar">
+            <svg lucideUser></svg>
+            <em>{{ c.initials }}</em>
+          </div>
+        }
+
+        <h2>{{ c.fullName }}</h2>
+        <p class="card__role">{{ c.role }}</p>
+
+        @if (!c.vacant && isSelected(c.id)) {
+          <div class="card__login" (click)="$event.stopPropagation()">
+            <label>
+              <svg lucideLock></svg>
+              PIN de acceso
+              <input
+                type="password"
+                inputmode="numeric"
+                maxlength="4"
+                autocomplete="one-time-code"
+                placeholder="••••"
+                [value]="pin()"
+                (input)="onPinInput($any($event.target).value)"
+                (keydown.enter)="submit(c)"
+              />
+            </label>
+
+            @if (error()) {
+              <p class="card__error">{{ error() }}</p>
+            }
+            @if (success()) {
+              <p class="card__ok">Acceso concedido…</p>
+            }
+
+            <button
+              type="button"
+              class="card__btn"
+              [disabled]="loading() || pin().length < 4"
+              (click)="submit(c)"
+            >
+              @if (loading()) {
+                <svg lucideLoaderCircle class="spin"></svg>
+                Verificando…
+              } @else {
+                Ingresar
+                <svg lucideArrowRight></svg>
+              }
+            </button>
+          </div>
+        }
+
+        @if (!c.vacant && !isSelected(c.id)) {
+          <p class="card__hint">Toque para autenticarse</p>
+        }
+      </article>
+    }
+  </section>
+
+  <footer class="portal__footer">
+    <p>Acceso restringido · Uso exclusivo del equipo operativo Lex Capital</p>
+    <a routerLink="/login">Acceso dirección / Super Admin →</a>
+  </footer>
+</main>

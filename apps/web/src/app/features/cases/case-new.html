@@ -1,0 +1,43 @@
+<section class="page">
+  <h1>Nuevo caso</h1>
+  <p>Registra el fallecido y crea el expediente.</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    <label>
+      Cédula del fallecido
+      <input formControlName="documentNumber" />
+    </label>
+    <label>
+      Nombre completo
+      <input formControlName="fullName" />
+    </label>
+    <label>
+      Ciudad
+      <input formControlName="city" />
+    </label>
+    <label>
+      Departamento
+      <input formControlName="department" />
+    </label>
+    <label>
+      Valor recuperable
+      <input type="number" formControlName="recoverableValue" />
+    </label>
+    <label>
+      Honorarios estimados
+      <input type="number" formControlName="estimatedFees" />
+    </label>
+    <label class="full">
+      Observaciones
+      <textarea formControlName="observations" rows="3"></textarea>
+    </label>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <button type="submit" [disabled]="loading()">
+      {{ loading() ? 'Guardando…' : 'Crear caso' }}
+    </button>
+  </form>
+</section>

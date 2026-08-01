@@ -1,0 +1,405 @@
+.tb {
+  --ink: #0b132b;
+  --gold: #c5a866;
+  --bg: #f8fafc;
+  color: var(--ink);
+}
+
+.tb-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tb-eyebrow {
+  margin: 0 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.tb-hero h1 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.tb-hero p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  max-width: 40rem;
+}
+
+.tb-hero__actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tb-btn,
+.tb-toggle button,
+.tb-mini,
+.tb-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tb-btn svg,
+.tb-toggle svg,
+.tb-icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.tb-toggle {
+  display: inline-flex;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+}
+
+.tb-toggle button {
+  border: 0;
+  border-radius: 0;
+}
+
+.tb-toggle button.is-on {
+  background: var(--ink);
+  color: #fff;
+}
+
+.tb-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.tb-stats > div {
+  background: #fff;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+  padding: 0.75rem 0.9rem;
+}
+
+.tb-stats strong {
+  display: block;
+  font-size: 1.35rem;
+}
+
+.tb-stats span {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.tb-stats .is-red strong {
+  color: #b91c1c;
+}
+.tb-stats .is-yellow strong {
+  color: #b45309;
+}
+.tb-stats .is-green strong {
+  color: #15803d;
+}
+
+.tb-filters {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  align-items: flex-end;
+}
+
+.tb-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.tb-filters label.tb-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+  background: #fff;
+  color: var(--ink);
+  font-size: 0.85rem;
+  min-height: 2.35rem;
+}
+
+.tb-inbox-badge {
+  font-style: normal;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+.tb-flow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 12rem;
+}
+
+.tb-flow--card {
+  margin: 0.45rem 0 0.15rem;
+  padding: 0.4rem 0.45rem;
+  background: #f8fafc;
+  border: 1px solid rgba(11, 19, 43, 0.08);
+}
+
+.tb-flow__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.tb-flow__meta small {
+  font-size: 0.72rem;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-arrow {
+  font-size: 0.7rem;
+  color: var(--gold);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tb-avatar {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--ink);
+  color: var(--gold);
+  border: 1px solid rgba(197, 168, 102, 0.4);
+}
+
+.tb-avatar.is-to {
+  background: #fff;
+  color: var(--ink);
+  border-color: rgba(11, 19, 43, 0.2);
+}
+
+.tb-filters select {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+  min-width: 140px;
+}
+
+.tb-error {
+  margin-bottom: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.tb-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #64748b;
+  background: #fff;
+  border: 1px dashed rgba(11, 19, 43, 0.15);
+}
+
+.tb-table-wrap {
+  overflow: auto;
+  background: #fff;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid rgba(11, 19, 43, 0.08);
+  vertical-align: top;
+}
+
+th {
+  background: var(--ink);
+  color: var(--gold);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+tr.is-red {
+  background: #fef2f2;
+}
+
+td strong {
+  display: block;
+}
+
+td small {
+  color: #64748b;
+}
+
+.tb-case,
+.tb-case-badge {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tb-case:hover,
+.tb-case-badge:hover {
+  color: #8a6d2f;
+}
+
+.tb-kanban {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.tb-col {
+  background: #eef2f7;
+  border: 1px solid rgba(11, 19, 43, 0.08);
+  min-height: 320px;
+}
+
+.tb-col > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid rgba(11, 19, 43, 0.08);
+}
+
+.tb-col h2 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.tb-col em {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.tb-col__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+
+.tb-card {
+  background: #fff;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+  padding: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.tb-card.is-red {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.tb-card.is-yellow {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.tb-case-badge {
+  display: inline-block;
+  margin-bottom: 0.45rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  background: rgba(197, 168, 102, 0.18);
+  border: 1px solid rgba(197, 168, 102, 0.4);
+}
+
+.tb-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.tb-meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.tb-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+
+.tb-mini {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.tb-mini.ok {
+  background: #166534;
+  color: #fff;
+  border-color: #166534;
+}
+
+.tb-icon {
+  padding: 0.35rem;
+  color: #166534;
+}
+
+.spin {
+  animation: tb-spin 0.9s linear infinite;
+}
+
+@keyframes tb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 960px) {
+  .tb-stats,
+  .tb-kanban {
+    grid-template-columns: 1fr;
+  }
+}

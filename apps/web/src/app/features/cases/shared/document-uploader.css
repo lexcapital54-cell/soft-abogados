@@ -1,0 +1,182 @@
+:host {
+  display: block;
+}
+
+.uploader {
+  border: 1px dashed #c5a866;
+  background: linear-gradient(180deg, #fffdf8, #fff);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.uploader--disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.uploader--drag {
+  border-color: #4f46e5;
+  background: #eef2ff;
+}
+
+.uploader__head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.uploader__head > svg {
+  width: 18px;
+  height: 18px;
+  color: #c5a866;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.uploader__head h3 {
+  margin: 0;
+  font-size: 14px;
+  color: #0b132b;
+}
+
+.uploader__head p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.uploader__head code {
+  font-size: 11px;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: #0f172a;
+}
+
+.uploader__type {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+
+.uploader__type input {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.uploader__drop {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 22px 14px;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: center;
+}
+
+.uploader__drop:hover {
+  border-color: #c5a866;
+  background: #fffbeb;
+}
+
+.uploader__drop svg {
+  width: 28px;
+  height: 28px;
+  color: #4f46e5;
+}
+
+.uploader__drop strong {
+  font-size: 13px;
+  color: #0b132b;
+}
+
+.uploader__drop span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.uploader__progress {
+  margin-top: 12px;
+}
+
+.uploader__bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.uploader__bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #c5a866);
+  transition: width 0.2s ease;
+}
+
+.uploader__progress em {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.uploader__progress svg {
+  width: 14px;
+  height: 14px;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.uploader__error,
+.uploader__ok {
+  margin: 10px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.uploader__error {
+  color: #be123c;
+}
+
+.uploader__ok {
+  color: #047857;
+}
+
+.uploader__error svg,
+.uploader__ok svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}

@@ -1,0 +1,777 @@
+// LexCapital Group — Modelo de datos FASE 1
+// Stack: NestJS + PostgreSQL + Prisma
+// Pendiente de aprobación antes de migraciones / API / UI
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  CEO
+  DIRECTOR_JURIDICO
+  ASESOR
+  SOCIO
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum CaseStatus {
+  ACTIVE
+  ARCHIVED
+  RECOVERED
+  JUDICIAL
+  COMMERCIAL
+  CRITICAL
+  CLOSED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CaseRiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum CaseStage {
+  RECEPCION
+  ANALISIS
+  DOCUMENTACION
+  VALIDACION
+  RECLAMACION_EXTRAJUDICIAL
+  RESPUESTA_ENTIDAD
+  NEGOCIACION
+  DEMANDA
+  PROCESO_JUDICIAL
+  SENTENCIA
+  PAGO
+  ARCHIVO
+}
+
+enum ContactStatus {
+  SIN_CONTACTAR
+  CONTACTADO
+  INTERESADO
+  NO_INTERESADO
+  NO_LOCALIZADO
+  EN_NEGOCIACION
+}
+
+enum KinshipType {
+  CONYUGE
+  COMPANERO_PERMANENTE
+  HIJO
+  HIJA
+  PADRE
+  MADRE
+  HERMANO
+  HERMANA
+  NIETO
+  NIETA
+  OTRO
+}
+
+enum DocumentCategory {
+  FALLECIDO
+  FAMILIAR
+  CONTRATO
+  PODER
+  JUDICIAL
+  FINANCIERO
+  OTRO
+}
+
+enum DocumentStatus {
+  NO_SOLICITADO
+  SOLICITADO
+  PENDIENTE
+  CARGADO
+  EN_REVISION
+  RECHAZADO
+  APROBADO
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+/// Tipología operativa Lex Capital (siempre vinculada a un caso)
+enum TaskType {
+  // Fase de contacto
+  BUSCAR_NUEVOS_FAMILIARES
+  OBTENER_UBICAS_DATOS_CONTACTO
+  ACTUALIZAR_INFO_HEREDEROS
+  // Fase documental
+  SOLICITAR_REGISTROS_CIVILES
+  AUTENTICAR_PODERES
+  VERIFICAR_PAZ_Y_SALVO
+  // Fase jurídica
+  REVISION_JURIDICA_PREVIA
+  RADICAR_DEMANDA_O_CASO
+  SEGUIMIENTO_TRAMITE_JUZGADO
+  // Fase de cierre
+  NEGOCIACION_ENTIDAD
+  LIQUIDACION_HONORARIOS
+  OTRO
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  WHATSAPP
+  SMS
+  MEETING
+  VISIT
+  PROMISE
+  FOLLOW_UP
+  STATUS_CHANGE
+  DOCUMENT_UPLOAD
+  DOCUMENT_REVIEW
+  ASSIGNMENT
+  PAYMENT
+  RECOVERY
+  COMMENT
+  SYSTEM
+}
+
+enum FinancialProductType {
+  SALDO_FIDUCIA
+  SALDO_FONDO_PENSION
+  SEGURO_VIDA
+  CUENTA_AHORROS
+  CDT
+  OTRO
+}
+
+enum ClaimStatus {
+  PENDING
+  IN_PROGRESS
+  NEGOTIATING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum DistributionType {
+  HONORARIOS
+  GASTO_OPERATIVO
+  PARTICIPACION_SOCIO
+  RESERVA
+}
+
+enum PartnerAccountType {
+  OPERATIVO
+  FINANCIERO
+  MIXTO
+}
+
+enum MaritalStatus {
+  SOLTERO
+  CASADO
+  UNION_LIBRE
+  DIVORCIADO
+  VIUDO
+  NO_ESPECIFICADO
+}
+
+enum RepoCategoria {
+  PLANTILLA
+  PORTAFOLIO
+  LEGAL
+}
+
+enum EstadoEnvioCorreo {
+  DELIVERED
+  FAILED
+}
+
+// =============================================================================
+// AUTH / USUARIOS
+// =============================================================================
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  firstName    String     @map("first_name")
+  lastName     String     @map("last_name")
+  phone        String?
+  role         UserRole   @default(ASESOR)
+  status       UserStatus @default(ACTIVE)
+  avatarUrl    String?    @map("avatar_url")
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Casos
+  casesAsAdvisor     Case[] @relation("CaseAdvisor")
+  casesAsCoordinator Case[] @relation("CaseCoordinator")
+
+  // Familiares asignados
+  relativesAssigned Relative[] @relation("RelativeAdvisor")
+
+  // Documentos revisados
+  documentsReviewed Document[] @relation("DocumentReviewer")
+
+  // Tareas
+  tasksAssigned Task[] @relation("TaskAssignee")
+  tasksCreated  Task[] @relation("TaskCreator")
+
+  // Actividades / timeline
+  activities CaseActivity[]
+
+  // Socio (si aplica)
+  partnerAccount PartnerAccount?
+
+  // Sesiones / auditoría
+  sessions     UserSession[]
+  auditLogs    AuditLog[]
+
+  // Comunicación / repositorio corporativo
+  repoUploads      RepositorioCorporativo[] @relation("RepoUploader")
+  emailsEnviados   RegistroEnvioCorreo[]    @relation("EmailSender")
+
+  // Notas personales (privadas, solo del usuario)
+  personalNotes NotaPersonal[]
+
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  tokenHash String   @map("token_hash")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("user_sessions")
+}
+
+// =============================================================================
+// ENTIDADES FINANCIERAS
+// =============================================================================
+
+model FinancialEntity {
+  id        String   @id @default(cuid())
+  name      String
+  nit       String?  @unique
+  type      String? // banco, fondo, aseguradora, cooperativa, fiduciaria
+  city      String?
+  phone     String?
+  email     String?
+  website   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  financialProducts CaseFinancialProduct[]
+
+  @@index([name])
+  @@map("financial_entities")
+}
+
+// =============================================================================
+// FALLECIDO (CAUSANTE)
+// =============================================================================
+
+model Deceased {
+  id                String         @id @default(cuid())
+  documentType      String         @default("CC") @map("document_type")
+  documentNumber    String         @unique @map("document_number")
+  fullName          String         @map("full_name")
+  birthDate         DateTime?      @map("birth_date")
+  deathDate         DateTime?      @map("death_date")
+  deathPlace        String?        @map("death_place")
+  city              String?
+  department        String?
+  maritalStatus     MaritalStatus  @default(NO_ESPECIFICADO) @map("marital_status")
+  profession        String?
+  lastAddress       String?        @map("last_address")
+  observations      String?
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  cases     Case[]
+  relatives Relative[]
+
+  @@index([fullName])
+  @@index([documentNumber])
+  @@map("deceased")
+}
+
+// =============================================================================
+// CASO / EXPEDIENTE (eje central)
+// =============================================================================
+
+model Case {
+  id              String         @id @default(cuid())
+  internalCode    String         @unique @map("internal_code")
+  /// Número de expediente = cédula del fallecido (puede repetirse si hay varios productos)
+  fileNumber      String         @map("file_number")
+  status          CaseStatus     @default(ACTIVE)
+  stage           CaseStage      @default(RECEPCION)
+  priority        CasePriority   @default(MEDIUM)
+  riskLevel       CaseRiskLevel  @default(MEDIUM) @map("risk_level")
+  recoverableValue Decimal       @default(0) @map("recoverable_value") @db.Decimal(18, 2)
+  /// Porcentaje de honorarios (30 estándar / 50 sucesión notarial-judicial)
+  feesPercent     Decimal        @default(30) @map("fees_percent") @db.Decimal(5, 2)
+  estimatedFees   Decimal        @default(0) @map("estimated_fees") @db.Decimal(18, 2)
+  collectedFees   Decimal        @default(0) @map("collected_fees") @db.Decimal(18, 2)
+  documentaryProgress Int        @default(0) @map("documentary_progress") // 0-100
+  city            String?
+  department      String?
+  observations    String?
+  /// Cuaderno de notas estratégicas del asesor
+  strategicNotes  String?        @map("strategic_notes") @db.Text
+  lastActivityAt  DateTime?      @map("last_activity_at")
+  closedAt        DateTime?      @map("closed_at")
+  /// Carpeta de storage: casos/{CEDULA}_{NOMBRE_NORMALIZADO}
+  storageFolderPath String?      @unique @map("storage_folder_path")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  deceasedId    String @map("deceased_id")
+  advisorId     String? @map("advisor_id")
+  coordinatorId String? @map("coordinator_id")
+
+  deceased    Deceased @relation(fields: [deceasedId], references: [id])
+  advisor     User?    @relation("CaseAdvisor", fields: [advisorId], references: [id])
+  coordinator User?    @relation("CaseCoordinator", fields: [coordinatorId], references: [id])
+
+  relatives           Relative[]
+  documents           Document[]
+  tasks               Task[]
+  activities          CaseActivity[]
+  financialProducts   CaseFinancialProduct[]
+  financialDistributions FinancialDistribution[]
+  stageHistory        CaseStageHistory[]
+  emailSends          RegistroEnvioCorreo[]
+
+  @@index([status])
+  @@index([stage])
+  @@index([priority])
+  @@index([advisorId])
+  @@index([fileNumber])
+  @@index([createdAt])
+  @@map("cases")
+}
+
+model CaseFinancialProduct {
+  id              String               @id @default(cuid())
+  caseId          String               @map("case_id")
+  entityId        String?              @map("entity_id")
+  productType     FinancialProductType @map("product_type")
+  productName     String?              @map("product_name")
+  accountNumber   String?              @map("account_number")
+  recoverableValue Decimal             @default(0) @map("recoverable_value") @db.Decimal(18, 2)
+  feesPercent     Decimal?             @map("fees_percent") @db.Decimal(5, 2)
+  estimatedFees   Decimal              @default(0) @map("estimated_fees") @db.Decimal(18, 2)
+  claimStatus     ClaimStatus          @default(PENDING) @map("claim_status")
+  observations    String?
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  case   Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  entity FinancialEntity? @relation(fields: [entityId], references: [id])
+
+  @@index([caseId])
+  @@index([entityId])
+  @@index([claimStatus])
+  @@map("case_financial_products")
+}
+
+model CaseStageHistory {
+  id         String    @id @default(cuid())
+  caseId     String    @map("case_id")
+  fromStage  CaseStage? @map("from_stage")
+  toStage    CaseStage @map("to_stage")
+  changedById String?  @map("changed_by_id")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  case Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
+  @@index([createdAt])
+  @@map("case_stage_history")
+}
+
+// =============================================================================
+// FAMILIARES / HEREDEROS
+// =============================================================================
+
+model Relative {
+  id              String        @id @default(cuid())
+  deceasedId      String        @map("deceased_id")
+  caseId          String?       @map("case_id")
+  documentType    String        @default("CC") @map("document_type")
+  documentNumber  String?       @map("document_number")
+  fullName        String        @map("full_name")
+  kinship         KinshipType
+  address         String?
+  city            String?
+  department      String?
+  phone           String?
+  mobile          String?
+  whatsapp        String?
+  email           String?
+  contactStatus   ContactStatus @default(SIN_CONTACTAR) @map("contact_status")
+  interestLevel   Int?          @map("interest_level") // 1-5
+  /// SLA de entrega documental del familiar (semáforo)
+  slaDueAt        DateTime?     @map("sla_due_at")
+  birthSerial     String?       @map("birth_serial")
+  marriageSerial  String?       @map("marriage_serial")
+  docLocation     String?       @map("doc_location")
+  imageUrl        String?       @map("image_url")
+  observations    String?
+  advisorId       String?       @map("advisor_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  deceased Deceased @relation(fields: [deceasedId], references: [id])
+  case     Case?    @relation(fields: [caseId], references: [id])
+  advisor  User?    @relation("RelativeAdvisor", fields: [advisorId], references: [id])
+
+  documents Document[]
+
+  @@index([deceasedId])
+  @@index([caseId])
+  @@index([documentNumber])
+  @@index([kinship])
+  @@index([contactStatus])
+  @@index([slaDueAt])
+  @@map("relatives")
+}
+
+// =============================================================================
+// DOCUMENTOS
+// =============================================================================
+// Mapeo Excel/CSV → este esquema:
+//   Titular_*     → Deceased (+ Case.fileNumber / recoverableValue / storageFolderPath)
+//   Heredero_*    → Relative (N por caso)
+//   Documentos    → Document (carga vía módulo storage /documents/upload)
+// No se duplican tablas "Caso/Heredero" del prompt Next.js: Case/Relative ya cubren el dominio.
+
+model DocumentType {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  name        String
+  category    DocumentCategory
+  /// Parentesco al que aplica (null = todos / fallecido)
+  kinship     KinshipType?
+  isRequired  Boolean          @default(true) @map("is_required")
+  description String?
+  sortOrder   Int              @default(0) @map("sort_order")
+  isActive    Boolean          @default(true) @map("is_active")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  documents Document[]
+
+  @@index([category])
+  @@index([kinship])
+  @@map("document_types")
+}
+
+model Document {
+  id             String         @id @default(cuid())
+  caseId         String         @map("case_id")
+  relativeId     String?        @map("relative_id")
+  documentTypeId String?        @map("document_type_id")
+  name           String
+  category       DocumentCategory
+  status         DocumentStatus @default(NO_SOLICITADO)
+  isRequired     Boolean        @default(true) @map("is_required")
+  version        Int            @default(1)
+  /// Ruta relativa en storage (ej. casos/2691080_NOMBRE/archivo.pdf)
+  storageKey     String?        @map("storage_key")
+  /// URL pública o servida por la API
+  storageUrl     String?        @map("storage_url")
+  originalFileName String?      @map("original_file_name")
+  mimeType       String?        @map("mime_type")
+  fileSize       Int?           @map("file_size")
+  /// SLA de entrega física del cliente (semáforo)
+  slaDueAt       DateTime?      @map("sla_due_at")
+  requestedAt    DateTime?      @map("requested_at")
+  uploadedAt     DateTime?      @map("uploaded_at")
+  reviewedAt     DateTime?      @map("reviewed_at")
+  reviewerId     String?        @map("reviewer_id")
+  observations   String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  case         Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  relative     Relative?     @relation(fields: [relativeId], references: [id])
+  documentType DocumentType? @relation(fields: [documentTypeId], references: [id])
+  reviewer     User?         @relation("DocumentReviewer", fields: [reviewerId], references: [id])
+
+  versions DocumentVersion[]
+
+  @@index([caseId])
+  @@index([relativeId])
+  @@index([status])
+  @@index([category])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String   @map("document_id")
+  version    Int
+  storageKey String   @map("storage_key")
+  mimeType   String?  @map("mime_type")
+  fileSize   Int?     @map("file_size")
+  uploadedBy String?  @map("uploaded_by")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+  @@map("document_versions")
+}
+
+// =============================================================================
+// TAREAS
+// =============================================================================
+
+model Task {
+  id          String       @id @default(cuid())
+  /// Obligatorio: ninguna tarea existe aislada del expediente
+  caseId      String       @map("case_id")
+  title       String
+  description String?
+  taskType    TaskType     @default(OTRO) @map("task_type")
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?    @map("due_date")
+  startedAt   DateTime?    @map("started_at")
+  completedAt DateTime?    @map("completed_at")
+  timeSpentMin Int?        @map("time_spent_min")
+  assigneeId  String?      @map("assignee_id")
+  createdById String?      @map("created_by_id")
+  /// Código de plantilla de automatización (ej. ELABORAR_PODER)
+  automationCode String?   @map("automation_code")
+  observations String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  case      Case  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  assignee  User? @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  createdBy User? @relation("TaskCreator", fields: [createdById], references: [id])
+
+  @@index([caseId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([priority])
+  @@index([taskType])
+  @@map("tasks")
+}
+
+// =============================================================================
+// TIMELINE / ACTIVIDADES (inmutable)
+// =============================================================================
+
+model CaseActivity {
+  id          String       @id @default(cuid())
+  caseId      String       @map("case_id")
+  userId      String?      @map("user_id")
+  type        ActivityType
+  title       String
+  description String?
+  metadata    Json?
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  case Case  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([caseId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("case_activities")
+}
+
+// =============================================================================
+// MÓDULO SOCIETARIO / FINANCIERO
+// =============================================================================
+
+model PartnerAccount {
+  id             String             @id @default(cuid())
+  userId         String             @unique @map("user_id")
+  displayName    String             @map("display_name")
+  accountType    PartnerAccountType @default(OPERATIVO) @map("account_type")
+  /// Participación por defecto (ej. 0.25 = 25%)
+  defaultShare   Decimal            @default(0) @map("default_share") @db.Decimal(8, 6)
+  capitalContributed Decimal        @default(0) @map("capital_contributed") @db.Decimal(18, 2)
+  isActive       Boolean            @default(true) @map("is_active")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  user          User                    @relation(fields: [userId], references: [id])
+  distributions FinancialDistribution[]
+
+  @@map("partner_accounts")
+}
+
+model FinancialDistribution {
+  id               String           @id @default(cuid())
+  caseId           String?          @map("case_id")
+  partnerAccountId String?          @map("partner_account_id")
+  type             DistributionType
+  concept          String
+  grossAmount      Decimal          @map("gross_amount") @db.Decimal(18, 2)
+  costsDeducted    Decimal          @default(0) @map("costs_deducted") @db.Decimal(18, 2)
+  netAmount        Decimal          @map("net_amount") @db.Decimal(18, 2)
+  sharePercent     Decimal?         @map("share_percent") @db.Decimal(8, 6)
+  periodLabel      String?          @map("period_label") // ej. 2026-Q1
+  notes            String?
+  distributedAt    DateTime         @default(now()) @map("distributed_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  case           Case?           @relation(fields: [caseId], references: [id])
+  partnerAccount PartnerAccount? @relation(fields: [partnerAccountId], references: [id])
+
+  @@index([caseId])
+  @@index([partnerAccountId])
+  @@index([type])
+  @@index([distributedAt])
+  @@map("financial_distributions")
+}
+
+// =============================================================================
+// AUDITORÍA GLOBAL
+// =============================================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?  @map("user_id")
+  /// Código de acción (CASO_CREADO, CAMBIO_HONORARIOS, etc.)
+  action     String
+  /// Entidad afectada (Caso, Documento, Heredero, Tarea…)
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  /// Caso asociado (filtro forense), si aplica
+  caseId     String?  @map("case_id")
+  /// Estado anterior (JSON)
+  oldValues  Json?    @map("old_values")
+  /// Estado nuevo / diff (JSON)
+  newValues  Json?    @map("new_values")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([caseId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// REPOSITORIO CORPORATIVO + COMUNICACIÓN OFICIAL
+// =============================================================================
+
+model RepositorioCorporativo {
+  id          String        @id @default(cuid())
+  nombre      String
+  categoria   RepoCategoria @default(PLANTILLA)
+  urlAcceso   String        @map("url_acceso")
+  storageKey  String?       @map("storage_key")
+  mimeType    String?       @map("mime_type")
+  fileSize    Int?          @map("file_size")
+  subidoPorId String        @map("subido_por_id")
+  activo      Boolean       @default(true)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  subidoPor User @relation("RepoUploader", fields: [subidoPorId], references: [id])
+
+  @@index([categoria])
+  @@index([activo])
+  @@map("corporate_repository")
+}
+
+model RegistroEnvioCorreo {
+  id                 String            @id @default(cuid())
+  casoId             String            @map("caso_id")
+  remitenteId        String            @map("remitente_id")
+  destinatarioEmail  String            @map("destinatario_email")
+  asunto             String
+  mensaje            String?           @db.Text
+  documentosAdjuntos String[]          @map("documentos_adjuntos")
+  estadoEnvio        EstadoEnvioCorreo @map("estado_envio")
+  errorMessage       String?           @map("error_message")
+  createdAt          DateTime          @default(now()) @map("created_at")
+
+  caso      Case @relation(fields: [casoId], references: [id], onDelete: Cascade)
+  remitente User @relation("EmailSender", fields: [remitenteId], references: [id])
+
+  @@index([casoId])
+  @@index([remitenteId])
+  @@index([estadoEnvio])
+  @@index([createdAt])
+  @@map("email_send_logs")
+}
+
+// =============================================================================
+// NOTAS PERSONALES DEL ASESOR (privadas)
+// =============================================================================
+
+model NotaPersonal {
+  id         String   @id @default(cuid())
+  usuarioId  String   @map("usuario_id")
+  contenido  String   @db.Text
+  colorFondo String   @default("amber") @map("color_fondo")
+  orden      Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  usuario User @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("personal_notes")
+}

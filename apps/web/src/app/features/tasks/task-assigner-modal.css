@@ -1,0 +1,191 @@
+.ta-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: rgba(11, 19, 43, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.ta-modal {
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid rgba(11, 19, 43, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.ta-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  background: #0b132b;
+  color: #f8fafc;
+}
+
+.ta-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #c5a866;
+  font-weight: 700;
+}
+
+.ta-eyebrow svg,
+.ta-icon svg,
+.ta-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.ta-head h2 {
+  margin: 0.25rem 0 0;
+  font-size: 1.15rem;
+}
+
+.ta-case {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: rgba(248, 250, 252, 0.75);
+}
+
+.ta-icon {
+  border: 1px solid rgba(248, 250, 252, 0.2);
+  background: transparent;
+  color: #fff;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ta-creator {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  background: #f8fafc;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.ta-creator strong {
+  color: #0b132b;
+  font-size: 0.92rem;
+}
+
+.ta-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8a6d2f;
+  background: rgba(197, 168, 102, 0.12);
+  border: 1px solid rgba(197, 168, 102, 0.35);
+  padding: 0.55rem 0.7rem;
+}
+
+.ta-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.ta-error {
+  margin: 0.85rem 1.1rem 0;
+  padding: 0.65rem 0.8rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.88rem;
+}
+
+.ta-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem 1.2rem;
+}
+
+.ta-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.ta-form input,
+.ta-form select,
+.ta-form textarea {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(11, 19, 43, 0.15);
+  color: #0b132b;
+}
+
+.ta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.ta-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.ta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid transparent;
+  padding: 0.6rem 0.9rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ta-btn.ghost {
+  background: #fff;
+  border-color: rgba(11, 19, 43, 0.15);
+}
+
+.ta-btn.primary {
+  background: #0b132b;
+  color: #fff;
+}
+
+.ta-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.spin {
+  animation: ta-spin 0.9s linear infinite;
+}
+
+@keyframes ta-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 560px) {
+  .ta-row {
+    grid-template-columns: 1fr;
+  }
+}

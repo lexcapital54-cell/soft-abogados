@@ -1,0 +1,267 @@
+.rp {
+  --ink: #0b132b;
+  --gold: #c5a866;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rp-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.rp-eyebrow {
+  margin: 0 0 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.rp-eyebrow svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.rp-hero h1 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.rp-hero p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  max-width: 36rem;
+}
+
+.rp-hero__actions {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.rp-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.rp-filter select {
+  font: inherit;
+  font-weight: 400;
+  min-width: 220px;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+  background: #fff;
+}
+
+.rp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(11, 19, 43, 0.14);
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rp-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.rp-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.rp-scope {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.rp-error {
+  padding: 0.7rem 0.9rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.rp-empty {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #64748b;
+  background: #fff;
+  border: 1px dashed rgba(11, 19, 43, 0.15);
+}
+
+.rp-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.rp-kpis article {
+  background: #fff;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+  padding: 0.85rem 0.95rem;
+}
+
+.rp-kpis header {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+
+.rp-kpis header svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.rp-kpis strong {
+  display: block;
+  font-size: 1.35rem;
+}
+
+.rp-kpis small {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.rp-kpis .is-alert strong {
+  color: #b91c1c;
+}
+
+.rp-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 0.85rem;
+}
+
+.rp-panel {
+  background: #fff;
+  border: 1px solid rgba(11, 19, 43, 0.1);
+  padding: 0.85rem;
+}
+
+.rp-panel > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.65rem;
+}
+
+.rp-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.rp-panel a {
+  font-size: 0.8rem;
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rp-muted {
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.55rem 0.4rem;
+  border-bottom: 1px solid rgba(11, 19, 43, 0.08);
+}
+
+th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+td a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.rp-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.rp-tasks li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.5rem;
+  border: 1px solid rgba(11, 19, 43, 0.08);
+  font-size: 0.85rem;
+}
+
+.rp-tasks li.is-overdue {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.rp-tasks strong {
+  display: block;
+}
+
+.rp-tasks small {
+  color: #64748b;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1100px) {
+  .rp-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .rp-grid {
+    grid-template-columns: 1fr;
+  }
+}

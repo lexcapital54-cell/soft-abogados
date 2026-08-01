@@ -1,0 +1,141 @@
+@if (open) {
+  <div class="em-backdrop" (click)="close()" role="presentation">
+    <div
+      class="em-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="em-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="em-head">
+        <div>
+          <p class="em-eyebrow"><svg lucideMail></svg> Comunicación oficial</p>
+          <h2 id="em-title">Compartir por correo</h2>
+          <p class="em-case">{{ caseLabel || caseId }}</p>
+        </div>
+        <button type="button" class="em-icon" (click)="close()" aria-label="Cerrar">
+          <svg lucideX></svg>
+        </button>
+      </header>
+
+      @if (error()) {
+        <div class="em-error">{{ error() }}</div>
+      }
+
+      @if (loading()) {
+        <div class="em-loading"><svg lucideLoaderCircle class="spin"></svg> Cargando…</div>
+      } @else {
+        <form class="em-form" (ngSubmit)="submit()">
+          <label>
+            Remitente
+            <input [value]="sender()" readonly class="is-ro" />
+          </label>
+
+          <label>
+            Destinatario (familiares / clientes del caso)
+            <select [(ngModel)]="to" name="to" required>
+              <option value="" disabled>Seleccione…</option>
+              @for (r of recipients(); track r.id) {
+                <option [value]="r.email">{{ r.label }} — {{ r.email }}</option>
+              }
+              <option value="__custom__">Otro correo…</option>
+            </select>
+          </label>
+
+          @if (to === '__custom__') {
+            <label>
+              Correo personalizado
+              <input
+                type="email"
+                [(ngModel)]="customTo"
+                name="customTo"
+                placeholder="correo@ejemplo.com"
+                required
+              />
+            </label>
+          }
+
+          <label>
+            Asunto
+            <input [(ngModel)]="subject" name="subject" required />
+          </label>
+
+          <div class="em-tabs">
+            <button
+              type="button"
+              [class.is-on]="tab() === 'case'"
+              (click)="tab.set('case')"
+            >
+              <svg lucidePaperclip></svg> Documentos del caso
+            </button>
+            <button
+              type="button"
+              [class.is-on]="tab() === 'repo'"
+              (click)="tab.set('repo')"
+            >
+              Repositorio corporativo
+            </button>
+          </div>
+
+          <div class="em-attach">
+            @if (tab() === 'case') {
+              @if (!caseDocs().length) {
+                <p class="em-muted">No hay archivos subidos en este expediente.</p>
+              } @else {
+                @for (d of caseDocs(); track d.id) {
+                  <label class="em-check">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedCaseDocs.has(d.id)"
+                      (change)="toggleCaseDoc(d.id)"
+                    />
+                    <span>
+                      <strong>{{ d.name }}</strong>
+                      <small>{{ d.category }} · {{ d.status }}</small>
+                    </span>
+                  </label>
+                }
+              }
+            } @else {
+              @if (!repoDocs().length) {
+                <p class="em-muted">
+                  Repositorio vacío. Suba plantillas en Carpeta Corporativa.
+                </p>
+              } @else {
+                @for (d of repoDocs(); track d.id) {
+                  <label class="em-check">
+                    <input
+                      type="checkbox"
+                      [checked]="selectedRepoDocs.has(d.id)"
+                      (change)="toggleRepoDoc(d.id)"
+                    />
+                    <span>
+                      <strong>{{ d.nombre }}</strong>
+                      <small>{{ d.categoria }}</small>
+                    </span>
+                  </label>
+                }
+              }
+            }
+            <p class="em-count">{{ selectedCount() }} adjunto(s) seleccionados</p>
+          </div>
+
+          <label>
+            Mensaje
+            <textarea rows="7" [(ngModel)]="message" name="message" required></textarea>
+          </label>
+
+          <footer class="em-actions">
+            <button type="button" class="em-btn ghost" (click)="close()">Cancelar</button>
+            <button type="submit" class="em-btn primary" [disabled]="sending()">
+              @if (sending()) {
+                <svg lucideLoaderCircle class="spin"></svg>
+              }
+              Enviar correo
+            </button>
+          </footer>
+        </form>
+      }
+    </div>
+  </div>
+}

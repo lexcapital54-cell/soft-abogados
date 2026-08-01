@@ -1,0 +1,213 @@
+<section class="tb">
+  <header class="tb-hero">
+    <div>
+      <p class="tb-eyebrow">Operaciones · SLA vinculado al expediente</p>
+      <h1>Tablero de tareas y alertas</h1>
+      <p>
+        Toda tarea pertenece a un caso. Semáforo: verde (&gt;5 días hábiles),
+        amarillo (1–5), rojo (vencida).
+      </p>
+    </div>
+    <div class="tb-hero__actions">
+      <button type="button" class="tb-btn ghost" (click)="load()">
+        <svg lucideRefreshCw></svg> Actualizar
+      </button>
+      <div class="tb-toggle">
+        <button
+          type="button"
+          [class.is-on]="view() === 'kanban'"
+          (click)="view.set('kanban')"
+        >
+          <svg lucideLayoutGrid></svg> Kanban
+        </button>
+        <button
+          type="button"
+          [class.is-on]="view() === 'table'"
+          (click)="view.set('table')"
+        >
+          <svg lucideList></svg> Tabla
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tb-stats">
+    <div><strong>{{ counts().open }}</strong><span>Abiertas</span></div>
+    <div class="is-red"><strong>{{ counts().red }}</strong><span>Rojas / vencidas</span></div>
+    <div class="is-yellow"><strong>{{ counts().yellow }}</strong><span>Amarillas</span></div>
+    <div class="is-green"><strong>{{ counts().green }}</strong><span>En tiempo</span></div>
+  </div>
+
+  <div class="tb-filters">
+    <label class="tb-check">
+      <input
+        type="checkbox"
+        [ngModel]="filterMine()"
+        (ngModelChange)="filterMine.set($event)"
+      />
+      Mi bandeja de entrada
+      @if (inboxCount() > 0) {
+        <em class="tb-inbox-badge">{{ inboxCount() }}</em>
+      }
+    </label>
+    <label>
+      Semáforo
+      <select [ngModel]="filterSla()" (ngModelChange)="filterSla.set($event)">
+        <option value="">Todos</option>
+        <option value="red">Rojo</option>
+        <option value="yellow">Amarillo</option>
+        <option value="green">Verde</option>
+      </select>
+    </label>
+    <label>
+      Estado
+      <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)">
+        <option value="">Todos</option>
+        <option value="PENDING">Pendiente</option>
+        <option value="IN_PROGRESS">En proceso</option>
+        <option value="COMPLETED">Completada</option>
+      </select>
+    </label>
+  </div>
+
+  @if (error()) {
+    <div class="tb-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="tb-empty">
+      <svg lucideLoaderCircle class="spin"></svg>
+      Cargando tablero…
+    </div>
+  } @else if (!filtered().length) {
+    <div class="tb-empty">No hay tareas con los filtros actuales.</div>
+  } @else if (view() === 'table') {
+    <div class="tb-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Caso</th>
+            <th>Tarea</th>
+            <th>Delegación</th>
+            <th>Vence</th>
+            <th>SLA</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of filtered(); track t.id) {
+            <tr [class.is-red]="t.sla?.tone === 'red'">
+              <td>
+                <a class="tb-case" [routerLink]="['/cases', t.caseId]">
+                  {{ caseLabel(t) }}
+                </a>
+              </td>
+              <td>
+                <strong>{{ t.title }}</strong>
+                <small>{{ t.taskTypeLabel || t.taskType }}</small>
+              </td>
+              <td>
+                <div class="tb-flow" title="De → Para">
+                  <span class="tb-avatar" [attr.aria-label]="creatorName(t)">
+                    {{ initials(t.createdBy?.firstName, t.createdBy?.lastName) }}
+                  </span>
+                  <span class="tb-flow__meta">
+                    <small>De: {{ creatorName(t) }}</small>
+                    <span class="tb-arrow" aria-hidden="true">→</span>
+                    <small>Para: {{ assigneeName(t) }}</small>
+                  </span>
+                  <span class="tb-avatar is-to" [attr.aria-label]="assigneeName(t)">
+                    {{ initials(t.assignee?.firstName, t.assignee?.lastName) }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                {{ t.dueDate ? (t.dueDate | date: 'mediumDate') : '—' }}
+              </td>
+              <td>
+                <app-status-badge
+                  [status]="slaBadge(t.sla?.tone)"
+                  [label]="t.sla?.label || '—'"
+                />
+              </td>
+              <td>{{ t.status }}</td>
+              <td>
+                @if (t.status !== 'COMPLETED') {
+                  <button
+                    type="button"
+                    class="tb-icon"
+                    title="Completar"
+                    [disabled]="updatingId() === t.id"
+                    (click)="setStatus(t, 'COMPLETED')"
+                  >
+                    <svg lucideCheckCircle></svg>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="tb-kanban">
+      @for (col of [
+        { key: 'PENDING', title: 'Pendiente' },
+        { key: 'IN_PROGRESS', title: 'En proceso' },
+        { key: 'COMPLETED', title: 'Completada' }
+      ]; track col.key) {
+        <section class="tb-col">
+          <header>
+            <h2>{{ col.title }}</h2>
+            <em>{{ columnTasks(col.key).length }}</em>
+          </header>
+          <div class="tb-col__body">
+            @for (t of columnTasks(col.key); track t.id) {
+              <article
+                class="tb-card"
+                [class.is-red]="t.sla?.tone === 'red'"
+                [class.is-yellow]="t.sla?.tone === 'yellow'"
+              >
+                <a class="tb-case-badge" [routerLink]="['/cases', t.caseId]">
+                  Caso: {{ caseLabel(t) }}
+                </a>
+                <h3>{{ t.title }}</h3>
+                <p class="tb-meta">{{ t.taskTypeLabel || t.taskType }}</p>
+                <div class="tb-flow tb-flow--card">
+                  <span class="tb-avatar">
+                    {{ initials(t.createdBy?.firstName, t.createdBy?.lastName) }}
+                  </span>
+                  <div class="tb-flow__meta">
+                    <small>De: {{ creatorName(t) }}</small>
+                    <span class="tb-arrow" aria-hidden="true">→</span>
+                    <small>Para: {{ assigneeName(t) }}</small>
+                  </div>
+                  <span class="tb-avatar is-to">
+                    {{ initials(t.assignee?.firstName, t.assignee?.lastName) }}
+                  </span>
+                </div>
+                <div class="tb-card__foot">
+                  <app-status-badge
+                    [status]="slaBadge(t.sla?.tone)"
+                    [label]="t.sla?.label || 'SLA'"
+                  />
+                  @if (t.status === 'PENDING') {
+                    <button type="button" class="tb-mini" (click)="setStatus(t, 'IN_PROGRESS')">
+                      Iniciar
+                    </button>
+                  }
+                  @if (t.status !== 'COMPLETED') {
+                    <button type="button" class="tb-mini ok" (click)="setStatus(t, 'COMPLETED')">
+                      Completar
+                    </button>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,70 @@
+<section
+  class="uploader"
+  [class.uploader--disabled]="disabled"
+  [class.uploader--drag]="dragOver()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave()"
+  (drop)="onDrop($event)"
+>
+  <header class="uploader__head">
+    <svg lucideUpload></svg>
+    <div>
+      <h3>Cargar documento al expediente</h3>
+      <p>
+        Se guarda en
+        <code>/casos/CEDULA_NOMBRE_NORMALIZADO/</code>
+        · estado inicial <strong>En revisión</strong>
+      </p>
+    </div>
+  </header>
+
+  <label class="uploader__type">
+    Tipo de documento
+    <input
+      type="text"
+      [(ngModel)]="tipoDocumento"
+      name="tipoDocumento"
+      placeholder="Ej. Registro Civil, Poder…"
+      [disabled]="disabled || uploading()"
+    />
+  </label>
+
+  <label class="uploader__drop">
+    <input
+      type="file"
+      accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,application/pdf,image/*"
+      (change)="onFileInput($event)"
+      [disabled]="disabled || uploading()"
+      hidden
+    />
+    <svg lucideFileUp></svg>
+    <strong>Arrastre aquí o haga clic para seleccionar</strong>
+    <span>PDF, JPG, PNG, WEBP o Word · máx. 15 MB</span>
+  </label>
+
+  @if (uploading()) {
+    <div class="uploader__progress" role="progressbar" [attr.aria-valuenow]="progress()">
+      <div class="uploader__bar">
+        <span [style.width.%]="progress()"></span>
+      </div>
+      <em>
+        <svg lucideLoaderCircle class="spin"></svg>
+        Subiendo… {{ progress() }}%
+      </em>
+    </div>
+  }
+
+  @if (error()) {
+    <p class="uploader__error">
+      <svg lucideAlertTriangle></svg>
+      {{ error() }}
+    </p>
+  }
+
+  @if (success()) {
+    <p class="uploader__ok">
+      <svg lucideCheckCircle></svg>
+      {{ success() }}
+    </p>
+  }
+</section>

@@ -1,0 +1,261 @@
+<section class="km">
+  @if (toast()) {
+    <div class="km-toast" role="status">{{ toast() }}</div>
+  }
+
+  <header class="km-hero">
+    <div>
+      <p class="km-eyebrow">
+        <svg lucideSparkles></svg>
+        Inteligencia de cruce · Consanguinidad
+      </p>
+      <h1>Motor de emparejamiento familiar</h1>
+      <p>
+        Cruce de bases (titulares vs. posibles herederos), inferencia de grados
+        por grafo/BFS y validación humana antes de consolidar en el expediente.
+      </p>
+    </div>
+    <div class="km-hero__meta">
+      <span [class.is-on]="aiAvailable()">
+        IA OpenAI: {{ aiAvailable() ? 'disponible' : 'heurística local' }}
+      </span>
+    </div>
+  </header>
+
+  @if (error()) {
+    <div class="km-error" role="alert">{{ error() }}</div>
+  }
+
+  <section class="km-ingest">
+    <article class="km-drop">
+      <header>
+        <svg lucideFileSpreadsheet></svg>
+        <div>
+          <h2>Base A — Fallecidos / Titulares</h2>
+          <p>CSV o Excel con cédula, nombres, apellidos, fechas…</p>
+        </div>
+      </header>
+      <label class="km-upload">
+        <svg lucideUpload></svg>
+        {{ baseA() ? baseA()!.fileName : 'Arrastre o seleccione archivo' }}
+        <input type="file" accept=".csv,.xlsx,.xls,.txt" hidden (change)="onFileA($event)" />
+      </label>
+      @if (baseA(); as a) {
+        <p class="km-file-meta">{{ a.rows.length | number }} filas · {{ a.columns.length }} columnas</p>
+        <div class="km-preview">
+          <table>
+            <thead>
+              <tr>
+                @for (c of a.columns.slice(0, 6); track c) {
+                  <th>{{ c }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of a.rows.slice(0, 4); track $index) {
+                <tr>
+                  @for (c of a.columns.slice(0, 6); track c) {
+                    <td>{{ row[c] }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+
+    <article class="km-drop">
+      <header>
+        <svg lucideFileSpreadsheet></svg>
+        <div>
+          <h2>Base B — Posibles herederos</h2>
+          <p>Registros civiles / bases de candidatos a cruce.</p>
+        </div>
+      </header>
+      <label class="km-upload">
+        <svg lucideUpload></svg>
+        {{ baseB() ? baseB()!.fileName : 'Arrastre o seleccione archivo' }}
+        <input type="file" accept=".csv,.xlsx,.xls,.txt" hidden (change)="onFileB($event)" />
+      </label>
+      @if (baseB(); as b) {
+        <p class="km-file-meta">{{ b.rows.length | number }} filas · {{ b.columns.length }} columnas</p>
+        <div class="km-preview">
+          <table>
+            <thead>
+              <tr>
+                @for (c of b.columns.slice(0, 6); track c) {
+                  <th>{{ c }}</th>
+                }
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of b.rows.slice(0, 4); track $index) {
+                <tr>
+                  @for (c of b.columns.slice(0, 6); track c) {
+                    <td>{{ row[c] }}</td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </article>
+  </section>
+
+  <div class="km-run">
+    <label class="km-ai-toggle" [class.is-disabled]="!aiAvailable()">
+      <input
+        type="checkbox"
+        [disabled]="!aiAvailable()"
+        [ngModel]="useAi()"
+        (ngModelChange)="useAi.set($event)"
+      />
+      Usar OpenAI para normalizar columnas ambiguas
+    </label>
+    <button
+      type="button"
+      class="km-btn km-btn--primary"
+      [disabled]="loading() || !baseA() || !baseB()"
+      (click)="runAnalysis()"
+    >
+      @if (loading()) {
+        <svg lucideLoaderCircle class="spin"></svg>
+        Procesando cruce…
+      } @else {
+        <svg lucideGitBranch></svg>
+        Ejecutar motor de consanguinidad
+      }
+    </button>
+  </div>
+
+  @if (result(); as res) {
+    <div class="km-stats">
+      <div><strong>{{ res.stats.titulares }}</strong><span>Titulares</span></div>
+      <div><strong>{{ res.stats.candidatos }}</strong><span>Candidatos</span></div>
+      <div><strong>{{ res.stats.matches }}</strong><span>Hallazgos</span></div>
+      <div><strong>{{ res.stats.avgConfidence }}%</strong><span>Confianza media</span></div>
+    </div>
+
+    <div class="km-case-bar">
+      <label>
+        Caso destino (validación → familiar oficial)
+        <select [ngModel]="caseId()" (ngModelChange)="caseId.set($event)">
+          <option value="">Seleccione expediente…</option>
+          @for (c of cases(); track c.id) {
+            <option [value]="c.id">
+              {{ c.internalCode }} — {{ c.deceased?.fullName || 'Sin titular' }}
+            </option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <div class="km-split">
+      <section class="km-list">
+        <header>
+          <h2>Hallazgos de parentesco</h2>
+          <p>{{ pendingRelations().length }} pendientes de decisión</p>
+        </header>
+
+        @if (!res.relations.length) {
+          <p class="km-empty">Sin coincidencias con las reglas actuales.</p>
+        } @else {
+          <div class="km-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Titular</th>
+                  <th>Familiar</th>
+                  <th>Parentesco</th>
+                  <th>Confianza</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of res.relations; track r.id) {
+                  @if (decisionOf(r.id) !== 'discarded') {
+                    <tr
+                      [class.is-selected]="selected()?.id === r.id"
+                      [class.is-validated]="decisionOf(r.id) === 'validated'"
+                      (click)="selectRelation(r)"
+                    >
+                      <td>
+                        <strong>{{ r.titular.fullName }}</strong>
+                        <small>{{ r.titular.cedula || '—' }}</small>
+                      </td>
+                      <td>
+                        <strong>{{ r.familiar.fullName }}</strong>
+                        <small>{{ r.familiar.cedula || '—' }}</small>
+                      </td>
+                      <td>
+                        <span class="km-badge" [attr.data-d]="degreeClass(r.degree)">
+                          {{ r.labelDisplay }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="km-conf">
+                          <div class="km-conf__bar">
+                            <i [style.width.%]="r.confidence"></i>
+                          </div>
+                          <span>{{ r.confidence }}%</span>
+                        </div>
+                      </td>
+                      <td class="km-actions" (click)="$event.stopPropagation()">
+                        @if (decisionOf(r.id) === 'validated') {
+                          <span class="km-ok">Validado</span>
+                        } @else {
+                          <button
+                            type="button"
+                            class="km-icon ok"
+                            title="Validar"
+                            [disabled]="validatingId() === r.id"
+                            (click)="validate(r)"
+                          >
+                            @if (validatingId() === r.id) {
+                              <svg lucideLoaderCircle class="spin"></svg>
+                            } @else {
+                              <svg lucideCheck></svg>
+                            }
+                          </button>
+                          <button
+                            type="button"
+                            class="km-icon danger"
+                            title="Descartar"
+                            (click)="discard(r)"
+                          >
+                            <svg lucideX></svg>
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (selected(); as s) {
+            <div class="km-reasons">
+              <h3>Evidencia del cruce</h3>
+              <ul>
+                @for (reason of s.reasons; track reason) {
+                  <li>{{ reason }}</li>
+                }
+              </ul>
+            </div>
+          }
+        }
+      </section>
+
+      <section class="km-graph-panel">
+        <header>
+          <h2>Árbol de consanguinidad</h2>
+          <p>Nodos = personas · aristas = grado inferido</p>
+        </header>
+        <app-kinship-graph [graph]="graph()" [highlightIds]="highlightIds()" />
+      </section>
+    </div>
+  }
+</section>
