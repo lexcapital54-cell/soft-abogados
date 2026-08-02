@@ -6,7 +6,7 @@
 
 [build.environment]
   NODE_VERSION = "20"
-  NG_APP_API_BASE_URL = "https://lexcapital-api.onrender.com/api/v1"
+  NG_APP_API_BASE_URL = "https://soft-abogados.onrender.com/api/v1"
 
 [[redirects]]
   from = "/*"

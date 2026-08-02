@@ -1,8 +1,8 @@
 /**
- * Generado en build (scripts/write-api-env.mjs).
- * Override: NG_APP_API_BASE_URL
+ * Entorno de producción (Netlify).
+ * Override en build: NG_APP_API_BASE_URL
  */
 export const environment = {
   production: true,
-  apiBaseUrl: "https://lexcapital-api.onrender.com/api/v1",
+  apiBaseUrl: 'https://soft-abogados.onrender.com/api/v1',
 };
