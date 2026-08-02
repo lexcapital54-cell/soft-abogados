@@ -7,7 +7,7 @@ services:
     rootDir: apps/api
     plan: free
     buildCommand: npm ci --include=dev && npx prisma generate && npx nest build
-    startCommand: npx prisma migrate deploy && npm run start:prod
+    startCommand: npx prisma migrate deploy && node dist/src/main.js
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_ENV
