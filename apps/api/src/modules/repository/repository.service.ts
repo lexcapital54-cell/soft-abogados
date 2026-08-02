@@ -4,9 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { RepoCategoria } from '@prisma/client';
-import { createReadStream, existsSync } from 'node:fs';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { StorageService } from '../../infrastructure/storage/storage.service';
+import type { OpenedObject } from '../../infrastructure/storage/storage.service';
 import type { AuthUser } from '../../common/decorators/auth.decorators';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction, AuditEntity } from '../audit/audit.types';
@@ -125,17 +125,20 @@ export class RepositoryService {
     return updated;
   }
 
-  async fileStream(id: string) {
+  async fileStream(id: string): Promise<{
+    opened: OpenedObject;
+    mimeType: string;
+    filename: string;
+  }> {
     const doc = await this.prisma.repositorioCorporativo.findUnique({
       where: { id },
     });
     if (!doc?.storageKey || !doc.activo) {
       throw new NotFoundException('Documento no encontrado');
     }
-    const abs = this.storage.resolveAbsolute(doc.storageKey);
-    if (!existsSync(abs)) throw new NotFoundException('Archivo físico ausente');
+    const opened = await this.storage.open(doc.storageKey);
     return {
-      stream: createReadStream(abs),
+      opened,
       mimeType: doc.mimeType ?? 'application/pdf',
       filename: doc.nombre,
     };

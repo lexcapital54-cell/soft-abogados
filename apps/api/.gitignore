@@ -1,4 +1,5 @@
-storage/
+# Solo el directorio de archivos subidos (no el código src/infrastructure/storage)
+/storage/
 uploads/
 *.log
 .env

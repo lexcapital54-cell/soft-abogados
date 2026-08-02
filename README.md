@@ -33,3 +33,7 @@ asesor@lexcapital.com / Asesor123!
 ## Docs
 
 Ver `docs/FASE-1.md`, `docs/FASE-2.md`, `docs/FASE-3.md`.
+
+## Despliegue (Neon + Render + Netlify)
+
+Guía paso a paso: [`docs/DEPLOY.md`](docs/DEPLOY.md).

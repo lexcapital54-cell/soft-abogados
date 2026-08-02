@@ -64,13 +64,17 @@ export class RepositoryController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { stream, mimeType, filename } =
+    const { opened, mimeType, filename } =
       await this.repository.fileStream(id);
+    if (opened.kind === 'redirect') {
+      res.redirect(opened.url);
+      return;
+    }
     res.set({
       'Content-Type': mimeType,
       'Content-Disposition': `inline; filename="${encodeURIComponent(filename)}"`,
     });
-    return new StreamableFile(stream);
+    return new StreamableFile(opened.stream);
   }
 
   @Delete(':id')

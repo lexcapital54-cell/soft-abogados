@@ -1,0 +1,32 @@
+# Blueprint opcional: New → Blueprint en Render
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: soft-abogados-api
+    runtime: node
+    rootDir: apps/api
+    plan: free
+    buildCommand: npm ci --include=dev && npx prisma generate && npx nest build
+    startCommand: npx prisma migrate deploy && npm run start:prod
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PREFIX
+        value: api/v1
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      - key: STORAGE_DRIVER
+        value: local
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      # Persistencia documental (recomendado en prod):
+      # STORAGE_DRIVER=supabase
+      # SUPABASE_URL=...
+      # SUPABASE_SERVICE_ROLE_KEY=...
+      # SUPABASE_STORAGE_BUCKET=lexcapital-docs
+      # STORAGE_PUBLIC_BASE=https://lexcapital-api.onrender.com/api/v1/documents/file

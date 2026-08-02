@@ -1,0 +1,19 @@
+# Lex Capital — frontend Angular en Netlify
+# Base directory en UI Netlify: apps/web
+# (si despliegas desde la raíz del monorepo, usa el netlify.toml de la raíz)
+
+[build]
+  command = "npm ci && npm run build:prod"
+  publish = "dist/web/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Define en el panel de Netlify (recomendado):
+  # NG_APP_API_BASE_URL = https://TU-SERVICIO.onrender.com/api/v1
+  NG_APP_API_BASE_URL = "https://lexcapital-api.onrender.com/api/v1"
+
+# SPA: todas las rutas → index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

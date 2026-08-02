@@ -17,7 +17,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import type { Request, Response } from 'express';
-import { createReadStream, existsSync } from 'node:fs';
 import { CurrentUser } from '../../common/decorators/auth.decorators';
 import type { AuthUser } from '../../common/decorators/auth.decorators';
 import { clientIp } from '../../common/utils/client-ip';
@@ -28,6 +27,15 @@ import {
   UpdateDocumentStatusDto,
   UploadDocumentDto,
 } from './dto/document.dto';
+
+function mimeFromName(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  return 'application/octet-stream';
+}
 
 @Controller('documents')
 export class DocumentsController {
@@ -104,32 +112,24 @@ export class DocumentsController {
   }
 
   @Get('file')
-  file(@Query('key') key: string, @Res({ passthrough: true }) res: Response) {
-    if (!key || key.includes('..')) {
+  async file(
+    @Query('key') key: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!key) {
       throw new NotFoundException('Archivo no encontrado');
     }
-    const absolute = this.storage.resolveAbsolute(key);
-    if (!existsSync(absolute)) {
-      throw new NotFoundException('Archivo no encontrado');
+    const opened = await this.storage.open(key);
+    if (opened.kind === 'redirect') {
+      res.redirect(opened.url);
+      return;
     }
-    const stream = createReadStream(absolute);
     const name = key.split('/').pop() ?? 'documento';
-    const lower = name.toLowerCase();
-    const mime =
-      lower.endsWith('.pdf')
-        ? 'application/pdf'
-        : lower.endsWith('.png')
-          ? 'image/png'
-          : lower.endsWith('.webp')
-            ? 'image/webp'
-            : lower.endsWith('.jpg') || lower.endsWith('.jpeg')
-              ? 'image/jpeg'
-              : 'application/octet-stream';
-    res.setHeader('Content-Type', mime);
+    res.setHeader('Content-Type', mimeFromName(name));
     res.setHeader(
       'Content-Disposition',
       `inline; filename="${name.replace(/"/g, '')}"`,
     );
-    return new StreamableFile(stream);
+    return new StreamableFile(opened.stream);
   }
 }

@@ -1,0 +1,14 @@
+# Lex Capital — deploy desde la raíz del monorepo
+[build]
+  base = "apps/web"
+  command = "npm ci && npm run build:prod"
+  publish = "dist/web/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NG_APP_API_BASE_URL = "https://lexcapital-api.onrender.com/api/v1"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

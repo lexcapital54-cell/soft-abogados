@@ -10,7 +10,9 @@ build/
 .env
 .env.local
 .env.*.local
+.env*.bak
 apps/api/.env
+apps/api/.env.local.bak
 apps/web/.env
 
 # IDE / OS
@@ -30,9 +32,11 @@ coverage/
 # Angular
 apps/web/.angular/
 
-# Uploads
+# Uploads / storage local
 uploads/
 tmp/
+apps/api/storage/
+/storage/
 
 # Datos sensibles / operativos (no subir a GitHub)
 Casos y documentos/
