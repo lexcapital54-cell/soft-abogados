@@ -261,7 +261,7 @@ export class DocumentViewerModalComponent implements OnChanges, OnDestroy {
             } else if (err?.status === 404) {
               reject(
                 new Error(
-                  'Archivo no encontrado o URL firmada caducada.',
+                  'Archivo no encontrado en el servidor. Los documentos sincronizados viven en la Mac; hay que subirlos a Supabase Storage para verlos en la nube.',
                 ),
               );
             } else {
