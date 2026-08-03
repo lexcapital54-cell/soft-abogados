@@ -10,7 +10,15 @@ const prisma = new PrismaClient();
 async function seedUsers() {
   const superPassword = await bcrypt.hash('LexCapital2026!', 10);
   const adminPassword = await bcrypt.hash('Admin123!', 10);
-  const consultantPin = await bcrypt.hash('2468', 10);
+
+  /** PIN único por consultor (antes todos compartían 2468 → confusión con Asesor 5). */
+  const pinByEmail: Record<string, string> = {
+    'luisafmorales@lexcapital.com.co': '1111',
+    'victorjpedroso@lexcapital.com.co': '2222',
+    'johanagomez@lexcapital.com.co': '3333',
+    'michelleaguilar@lexcapital.com.co': '4444',
+    'asesor@lexcapital.com': '2468',
+  };
 
   const laura = await prisma.user.upsert({
     where: { email: 'lauracastrog@lexcapital.com.co' },
@@ -62,6 +70,7 @@ async function seedUsers() {
     },
   });
 
+  const advisorPin = await bcrypt.hash(pinByEmail['asesor@lexcapital.com'], 10);
   const advisor = await prisma.user.upsert({
     where: { email: 'asesor@lexcapital.com' },
     update: {
@@ -69,11 +78,11 @@ async function seedUsers() {
       lastName: '5',
       role: UserRole.ASESOR,
       status: 'ACTIVE',
-      passwordHash: consultantPin,
+      passwordHash: advisorPin,
     },
     create: {
       email: 'asesor@lexcapital.com',
-      passwordHash: consultantPin,
+      passwordHash: advisorPin,
       firstName: 'Asesor',
       lastName: '5',
       role: UserRole.ASESOR,
@@ -109,6 +118,7 @@ async function seedUsers() {
 
   const consultantIds: string[] = [];
   for (const c of consultants) {
+    const passwordHash = await bcrypt.hash(pinByEmail[c.email], 10);
     const u = await prisma.user.upsert({
       where: { email: c.email },
       update: {
@@ -116,12 +126,12 @@ async function seedUsers() {
         lastName: c.lastName,
         role: UserRole.ASESOR,
         status: 'ACTIVE',
-        passwordHash: consultantPin,
+        passwordHash,
         phone: c.phone,
       },
       create: {
         email: c.email,
-        passwordHash: consultantPin,
+        passwordHash,
         firstName: c.firstName,
         lastName: c.lastName,
         role: UserRole.ASESOR,

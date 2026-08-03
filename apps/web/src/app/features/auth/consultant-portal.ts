@@ -73,7 +73,7 @@ export class ConsultantPortalPage {
           this.success.set(true);
           this.loading.set(false);
           window.setTimeout(() => {
-            void this.router.navigateByUrl('/cases');
+            void this.router.navigateByUrl('/dashboard');
           }, 500);
         },
         error: (err) => {
