@@ -126,8 +126,15 @@ export class DocumentsApiService {
     );
   }
 
-  /** URL autenticada del archivo (evita abrir storage sin Bearer) */
+  /** Preferir URL pública de Supabase; si no, proxy autenticado de la API */
   fileUrl(doc: Pick<CaseDocument, 'storageKey' | 'storageUrl'>): string | null {
+    if (
+      doc.storageUrl &&
+      /^https?:\/\//i.test(doc.storageUrl) &&
+      !doc.storageUrl.includes('/documents/file')
+    ) {
+      return doc.storageUrl;
+    }
     if (doc.storageKey) {
       return `${environment.apiBaseUrl}/documents/file?key=${encodeURIComponent(doc.storageKey)}`;
     }

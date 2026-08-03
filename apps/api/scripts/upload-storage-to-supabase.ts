@@ -34,6 +34,13 @@ const storageRoot = resolve(
 
 const prisma = new PrismaClient();
 
+function sanitizeStorageKey(key: string): string {
+  return key
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._/-]+/g, '_');
+}
+
 function walkFiles(dir: string, acc: string[] = []): string[] {
   if (!existsSync(dir)) return acc;
   for (const name of readdirSync(dir)) {
@@ -97,20 +104,25 @@ async function main() {
   const publicBase = `${supabaseUrl}/storage/v1/object/public/${bucket}`;
 
   for (const absolute of files) {
-    const storageKey = relative(storageRoot, absolute).replace(/\\/g, '/');
+    const originalKey = relative(storageRoot, absolute).replace(/\\/g, '/');
+    const storageKey = sanitizeStorageKey(originalKey);
     try {
       if (!dryRun) {
         await uploadOne(storageKey, absolute);
+        const publicUrl = `${publicBase}/${storageKey}`;
+        // Actualiza por clave original (con acentos) o ya sanitizada
         await prisma.document.updateMany({
-          where: { storageKey },
-          data: { storageUrl: `${publicBase}/${storageKey}` },
+          where: {
+            OR: [{ storageKey: originalKey }, { storageKey }],
+          },
+          data: { storageKey, storageUrl: publicUrl },
         });
       }
       ok++;
       if (ok % 25 === 0) console.log(`  … ${ok}/${files.length}`);
     } catch (e) {
       fail++;
-      console.error(`FAIL ${storageKey}: ${(e as Error).message}`);
+      console.error(`FAIL ${originalKey}: ${(e as Error).message}`);
     }
   }
 

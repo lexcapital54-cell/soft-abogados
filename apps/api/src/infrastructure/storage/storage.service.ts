@@ -108,12 +108,25 @@ export class StorageService {
     buffer: Buffer,
   ): Promise<StoredObject> {
     const folder = folderPath.replace(/^\/+|\/+$/g, '');
-    const storageKey = `${folder}/${fileName}`.replace(/\\/g, '/');
+    const rawKey = `${folder}/${fileName}`.replace(/\\/g, '/');
+    const storageKey = this.sanitizeKey(rawKey);
 
     if (this.driver === 'supabase') {
       return this.saveSupabase(storageKey, buffer);
     }
-    return this.saveLocal(folder, fileName, storageKey, buffer);
+    return this.saveLocal(
+      storageKey.includes('/') ? storageKey.slice(0, storageKey.lastIndexOf('/')) : '',
+      storageKey.includes('/') ? storageKey.slice(storageKey.lastIndexOf('/') + 1) : storageKey,
+      storageKey,
+      buffer,
+    );
+  }
+
+  private sanitizeKey(key: string): string {
+    return key
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._/-]+/g, '_');
   }
 
   private async saveLocal(
@@ -171,12 +184,12 @@ export class StorageService {
   }
 
   publicUrlFor(storageKey: string): string | null {
-    if (this.driver !== 'supabase' || !this.supabaseUrl) return null;
+    if (!this.supabaseUrl) return null;
     return `${this.supabaseUrl}/storage/v1/object/public/${this.bucket}/${storageKey}`;
   }
 
   async open(storageKey: string): Promise<OpenedObject> {
-    const key = storageKey.replace(/^\/+/, '');
+    const key = this.sanitizeKey(storageKey.replace(/^\/+/, ''));
     if (!key || key.includes('..')) {
       throw new BadRequestException('Clave de archivo inválida');
     }
@@ -190,9 +203,22 @@ export class StorageService {
     }
 
     const absolute = this.resolveAbsolute(key);
-    if (!existsSync(absolute)) {
-      throw new NotFoundException('Archivo no encontrado');
+    const fallback = this.resolveAbsolute(storageKey.replace(/^\/+/, ''));
+    const path = existsSync(absolute)
+      ? absolute
+      : existsSync(fallback)
+        ? fallback
+        : null;
+    if (path) {
+      return { kind: 'stream', stream: createReadStream(path) };
     }
-    return { kind: 'stream', stream: createReadStream(absolute) };
+
+    // En cloud (Render) el disco local no tiene los syncs: redirigir a Supabase si hay URL.
+    const remote = this.publicUrlFor(key);
+    if (remote) {
+      return { kind: 'redirect', url: remote };
+    }
+
+    throw new NotFoundException('Archivo no encontrado');
   }
 }
