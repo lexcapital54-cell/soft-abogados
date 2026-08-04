@@ -182,186 +182,156 @@
         @if (!c.relatives.length) {
           <p class="empty pad">Sin familiares registrados.</p>
         } @else {
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Familiar</th>
-                  <th>Parentesco</th>
-                  <th>Contacto</th>
-                  <th>Vencimiento SLA</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (r of c.relatives; track r.id) {
-                  @let sla = slaOf(r.slaDueAt);
-                  <tr [class.is-pending]="isPendingRelative(r)" [class.row-danger]="sla.tone === 'danger'">
-                    <td class="relative-main">
-                      <strong>{{ r.fullName }}</strong>
-                      @if (r.documentNumber?.trim()) {
-                        <div class="meta-line">
-                          <span class="meta-label">Cédula</span>
-                          {{ r.documentNumber }}
-                        </div>
-                      }
-                      @if (r.observations?.trim()) {
-                        <div class="meta-line obs-line">
-                          <span class="meta-label">Obs.</span>
-                          {{ r.observations }}
-                        </div>
-                      }
-                      @if (isPendingRelative(r)) {
-                        <div class="pending-tag">Datos pendientes</div>
-                      }
-                    </td>
-                    <td>{{ kinshipLabel(r.kinship) }}</td>
-                    <td>
-                      {{ r.mobile || r.phone || '—' }}
-                      <div class="muted">{{ contactLabel(r.contactStatus) }}</div>
-                    </td>
-                    <td>
+          <div class="relative-grid pad">
+            @for (r of c.relatives; track r.id) {
+              @let sla = slaOf(r.slaDueAt);
+              <article
+                class="relative-card"
+                [class.is-pending]="isPendingRelative(r)"
+                [class.row-danger]="sla.tone === 'danger'"
+              >
+                <div class="relative-card__top">
+                  <div>
+                    <h3>{{ r.fullName }}</h3>
+                    <p class="relative-card__kin">{{ kinshipLabel(r.kinship) }}</p>
+                  </div>
+                  <app-status-badge
+                    [status]="contactBadge(r.contactStatus)"
+                    [label]="contactLabel(r.contactStatus)"
+                  />
+                </div>
+
+                <dl class="relative-card__facts">
+                  <div>
+                    <dt>Cédula</dt>
+                    <dd>{{ r.documentNumber?.trim() || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Contacto</dt>
+                    <dd>{{ r.mobile || r.phone || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>SLA</dt>
+                    <dd class="relative-card__sla">
                       <button type="button" class="sla-btn" (click)="openSla(r)">
                         <svg lucideCalendarClock></svg>
                         {{ r.slaDueAt ? (r.slaDueAt | date: 'mediumDate') : 'Definir SLA' }}
                       </button>
-                      <div>
-                        <app-status-badge [status]="sla.tone" [label]="sla.label" />
-                      </div>
-                    </td>
-                    <td>
-                      <app-status-badge
-                        [status]="contactBadge(r.contactStatus)"
-                        [label]="contactLabel(r.contactStatus)"
-                      />
-                    </td>
-                    <td>
-                      <div class="actions">
-                        <button type="button" class="act" (click)="openEdit(r)">
-                          <svg lucidePencil></svg>
-                          {{ isPendingRelative(r) ? 'Completar' : 'Editar' }}
-                        </button>
-                        @if (!isPendingRelative(r)) {
-                          <button type="button" class="act upload" (click)="openContact(r.id)">
-                            <svg lucidePhone></svg> Contactar
-                          </button>
-                        }
-                      </div>
-                    </td>
-                  </tr>
+                      <app-status-badge [status]="sla.tone" [label]="sla.label" />
+                    </dd>
+                  </div>
+                </dl>
 
-                  @if (editPanelId() === r.id) {
-                    <tr class="contact-row">
-                      <td colspan="6">
-                        <div class="contact-panel">
-                          <p class="contact-title">Editar / completar datos de <strong>{{ r.fullName }}</strong></p>
-                          <div class="family-form edit-inline">
-                            <div class="field">
-                              <label>Nombre</label>
-                              <input [(ngModel)]="editFullName" [ngModelOptions]="{ standalone: true }" />
-                            </div>
-                            <div class="field">
-                              <label>Cédula</label>
-                              <input [(ngModel)]="editDocumentNumber" [ngModelOptions]="{ standalone: true }" />
-                            </div>
-                            <div class="field">
-                              <label>Parentesco</label>
-                              <select [(ngModel)]="editKinship" [ngModelOptions]="{ standalone: true }">
-                                @for (k of kinshipOptions; track k.value) {
-                                  <option [value]="k.value">{{ k.label }}</option>
-                                }
-                              </select>
-                            </div>
-                            <div class="field">
-                              <label>Celular</label>
-                              <input [(ngModel)]="editMobile" [ngModelOptions]="{ standalone: true }" />
-                            </div>
-                            <div class="field">
-                              <label>Correo</label>
-                              <input [(ngModel)]="editEmail" [ngModelOptions]="{ standalone: true }" />
-                            </div>
-                            <div class="field field-span">
-                              <label>Observaciones</label>
-                              <textarea
-                                rows="2"
-                                [(ngModel)]="editObservations"
-                                [ngModelOptions]="{ standalone: true }"
-                              ></textarea>
-                            </div>
-                          </div>
-                          <div class="actions">
-                            <button type="button" class="act ok" [disabled]="savingEdit()" (click)="saveEdit(r.id)">
-                              Guardar datos
-                            </button>
-                            <button type="button" class="act" (click)="cancelEdit()">Cancelar</button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  }
-
-                  @if (slaPanelId() === r.id) {
-                    <tr class="contact-row">
-                      <td colspan="6">
-                        <div class="contact-panel">
-                          <p class="contact-title">Reagendar SLA — <strong>{{ r.fullName }}</strong></p>
-                          <div class="contact-fields">
-                            <div class="field">
-                              <label>Nueva fecha</label>
-                              <input type="date" [(ngModel)]="slaDueAt" [ngModelOptions]="{ standalone: true }" />
-                            </div>
-                            <div class="field grow">
-                              <label>Motivo</label>
-                              <textarea rows="2" [(ngModel)]="slaReason" [ngModelOptions]="{ standalone: true }"
-                                placeholder="Justifique el reagendo del compromiso documental…"></textarea>
-                            </div>
-                          </div>
-                          <div class="actions">
-                            <button type="button" class="act ok" (click)="saveSla(r.id)">Guardar SLA</button>
-                            <button type="button" class="act" (click)="slaPanelId.set(null)">Cancelar</button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  }
-
-                  @if (contactPanelId() === r.id) {
-                    <tr class="contact-row">
-                      <td colspan="6">
-                        <div class="contact-panel">
-                          <p class="contact-title">Registrar contacto con <strong>{{ r.fullName }}</strong></p>
-                          <div class="contact-fields">
-                            <div class="field">
-                              <label>Canal</label>
-                              <select [ngModel]="contactChannel()" (ngModelChange)="contactChannel.set($event)" [ngModelOptions]="{ standalone: true }">
-                                <option value="CALL">Llamada</option>
-                                <option value="WHATSAPP">WhatsApp</option>
-                                <option value="EMAIL">Correo</option>
-                                <option value="COMMENT">Otro</option>
-                              </select>
-                            </div>
-                            <div class="field grow">
-                              <label>Nota</label>
-                              <textarea rows="3" [ngModel]="contactNote()" (ngModelChange)="contactNote.set($event)" [ngModelOptions]="{ standalone: true }"></textarea>
-                            </div>
-                          </div>
-                          <div class="actions">
-                            <button type="button" class="act ok" [disabled]="contactingId() === r.id" (click)="submitContact(r.id, r.fullName)">
-                              Guardar y marcar contactado
-                            </button>
-                            <button type="button" class="act" (click)="cancelContact()">Cancelar</button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  }
+                @if (r.observations?.trim()) {
+                  <p class="relative-card__obs">{{ r.observations }}</p>
                 }
-              </tbody>
-            </table>
+
+                @if (isPendingRelative(r)) {
+                  <div class="pending-tag">Datos pendientes</div>
+                }
+
+                <div class="actions relative-card__actions">
+                  <button type="button" class="act" (click)="openEdit(r)">
+                    <svg lucidePencil></svg>
+                    {{ isPendingRelative(r) ? 'Completar' : 'Editar' }}
+                  </button>
+                  @if (!isPendingRelative(r)) {
+                    <button type="button" class="act upload" (click)="openContact(r.id)">
+                      <svg lucidePhone></svg> Contactar
+                    </button>
+                  }
+                </div>
+
+                @if (editPanelId() === r.id) {
+                  <div class="contact-panel relative-card__panel">
+                    <p class="contact-title">Editar datos de <strong>{{ r.fullName }}</strong></p>
+                    <div class="family-form edit-inline">
+                      <div class="field">
+                        <label>Nombre</label>
+                        <input [(ngModel)]="editFullName" [ngModelOptions]="{ standalone: true }" />
+                      </div>
+                      <div class="field">
+                        <label>Cédula</label>
+                        <input [(ngModel)]="editDocumentNumber" [ngModelOptions]="{ standalone: true }" />
+                      </div>
+                      <div class="field">
+                        <label>Parentesco</label>
+                        <select [(ngModel)]="editKinship" [ngModelOptions]="{ standalone: true }">
+                          @for (k of kinshipOptions; track k.value) {
+                            <option [value]="k.value">{{ k.label }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label>Celular</label>
+                        <input [(ngModel)]="editMobile" [ngModelOptions]="{ standalone: true }" />
+                      </div>
+                      <div class="field">
+                        <label>Correo</label>
+                        <input [(ngModel)]="editEmail" [ngModelOptions]="{ standalone: true }" />
+                      </div>
+                      <div class="field field-span">
+                        <label>Observaciones</label>
+                        <textarea rows="2" [(ngModel)]="editObservations" [ngModelOptions]="{ standalone: true }"></textarea>
+                      </div>
+                    </div>
+                    <div class="actions">
+                      <button type="button" class="act ok" [disabled]="savingEdit()" (click)="saveEdit(r.id)">Guardar datos</button>
+                      <button type="button" class="act" (click)="cancelEdit()">Cancelar</button>
+                    </div>
+                  </div>
+                }
+
+                @if (slaPanelId() === r.id) {
+                  <div class="contact-panel relative-card__panel">
+                    <p class="contact-title">Reagendar SLA — <strong>{{ r.fullName }}</strong></p>
+                    <div class="contact-fields">
+                      <div class="field">
+                        <label>Nueva fecha</label>
+                        <input type="date" [(ngModel)]="slaDueAt" [ngModelOptions]="{ standalone: true }" />
+                      </div>
+                      <div class="field grow">
+                        <label>Motivo</label>
+                        <textarea rows="2" [(ngModel)]="slaReason" [ngModelOptions]="{ standalone: true }" placeholder="Justifique el reagendo…"></textarea>
+                      </div>
+                    </div>
+                    <div class="actions">
+                      <button type="button" class="act ok" (click)="saveSla(r.id)">Guardar SLA</button>
+                      <button type="button" class="act" (click)="slaPanelId.set(null)">Cancelar</button>
+                    </div>
+                  </div>
+                }
+
+                @if (contactPanelId() === r.id) {
+                  <div class="contact-panel relative-card__panel">
+                    <p class="contact-title">Registrar contacto con <strong>{{ r.fullName }}</strong></p>
+                    <div class="contact-fields">
+                      <div class="field">
+                        <label>Canal</label>
+                        <select [ngModel]="contactChannel()" (ngModelChange)="contactChannel.set($event)" [ngModelOptions]="{ standalone: true }">
+                          <option value="CALL">Llamada</option>
+                          <option value="WHATSAPP">WhatsApp</option>
+                          <option value="EMAIL">Correo</option>
+                          <option value="COMMENT">Otro</option>
+                        </select>
+                      </div>
+                      <div class="field grow">
+                        <label>Nota</label>
+                        <textarea rows="3" [ngModel]="contactNote()" (ngModelChange)="contactNote.set($event)" [ngModelOptions]="{ standalone: true }"></textarea>
+                      </div>
+                    </div>
+                    <div class="actions">
+                      <button type="button" class="act ok" [disabled]="contactingId() === r.id" (click)="submitContact(r.id, r.fullName)">Guardar y marcar contactado</button>
+                      <button type="button" class="act" (click)="cancelContact()">Cancelar</button>
+                    </div>
+                  </div>
+                }
+              </article>
+            }
           </div>
         }
       </article>
+
 
       </div><!-- /.bento-main -->
 
