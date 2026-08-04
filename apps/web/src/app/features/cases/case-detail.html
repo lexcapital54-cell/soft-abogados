@@ -84,97 +84,66 @@
       }
     </section>
 
-    <!-- BENTO 60/40 -->
+    <!-- LAYOUT PRINCIPAL: contenido + lateral -->
     <section class="bento">
       <div class="bento-main">
-    <!-- INFO + SEMAFORO + TAREAS (legacy top cards become fallecido only first) -->
-    <section class="grid-3">
-      <article class="card card-span-2">
-        <header class="card-head">
-          <h2>Fallecido</h2>
-          <button type="button" class="ghost" (click)="openEditCase()">
-            <svg lucideEdit2></svg> Editar
-          </button>
-        </header>
-        <div class="deceased-block">
-          <div class="avatar-ribbon" aria-hidden="true">
-            <span>{{ c.deceased.fullName.charAt(0) }}</span>
-          </div>
-          <dl class="info-dl info-dl-2">
-            <div><dt>Nombre</dt><dd>{{ c.deceased.fullName }}</dd></div>
-            <div><dt>Cédula</dt><dd>{{ c.deceased.documentNumber }}</dd></div>
-            <div>
-              <dt>Estado civil</dt>
-              <dd>{{ c.deceased.maritalStatus || '—' }}</dd>
-            </div>
-            <div>
-              <dt>Domicilio</dt>
-              <dd>{{ c.deceased.lastAddress || c.deceased.city || '—' }}</dd>
-            </div>
-            <div>
-              <dt>Ciudad / Dpto</dt>
-              <dd>{{ c.deceased.city || '—' }} / {{ c.deceased.department || '—' }}</dd>
-            </div>
-            <div>
-              <dt>Saldo estimado</dt>
-              <dd>{{ c.recoverableValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
-            </div>
-            <div class="span-2 obs-callout">
-              <dt>Observaciones del caso</dt>
-              <dd class="obs-text">{{ c.observations?.trim() || 'Sin observaciones registradas' }}</dd>
-            </div>
-          </dl>
-        </div>
-      </article>
-
-      <article class="card">
-        <header class="card-head">
-          <h2>Tareas</h2>
-          <button type="button" class="ghost" (click)="showAddTask.set(true)">
-            <svg lucidePlus></svg> Nueva
-          </button>
-        </header>
-        @if (!(c.tasks?.length)) {
-          <p class="empty">Sin tareas abiertas.</p>
-        } @else {
-          <ul class="task-list">
-            @for (t of c.tasks; track t.id) {
-              <li>
-                <div>
-                  <strong>{{ t.title }}</strong>
-                  @if (t.dueDate) {
-                    <span class="muted">{{ t.dueDate | date: 'mediumDate' }}</span>
-                  }
-                </div>
-                <button type="button" class="act ok" (click)="completeTask(t.id)" title="Completar">
-                  <svg lucideCheckCircle></svg>
-                </button>
-              </li>
-            }
-          </ul>
-        }
-      </article>
-    </section>
-
-    <!-- FAMILIARES + NOTAS -->
-    <section class="grid-23">
-      <article class="card flush">
-        <header class="pad family-head">
-          <div>
-            <h2>Familiares / posibles herederos ({{ c.relatives.length }})</h2>
-            <p class="muted">Incluye SLA de entrega documental y semáforo.</p>
-          </div>
-          <div class="family-head-actions">
-            @if (canApprove()) {
-              <a class="act" routerLink="/cruce-datos">
-                Análisis parentesco (IA)
-              </a>
-            }
-            <button type="button" class="act upload" (click)="showAddRelative.set(!showAddRelative())">
-              <svg lucidePlus></svg> Agregar familiar
+        <article class="card deceased-card">
+          <header class="card-head">
+            <h2>Fallecido</h2>
+            <button type="button" class="ghost" (click)="openEditCase()">
+              <svg lucideEdit2></svg> Editar
             </button>
+          </header>
+          <div class="deceased-block">
+            <div class="avatar-ribbon" aria-hidden="true">
+              <span>{{ c.deceased.fullName.charAt(0) }}</span>
+            </div>
+            <dl class="info-dl info-dl-2">
+              <div><dt>Nombre</dt><dd>{{ c.deceased.fullName }}</dd></div>
+              <div><dt>Cédula</dt><dd>{{ c.deceased.documentNumber }}</dd></div>
+              <div>
+                <dt>Estado civil</dt>
+                <dd>{{ c.deceased.maritalStatus || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Domicilio</dt>
+                <dd>{{ c.deceased.lastAddress || c.deceased.city || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Ciudad / Dpto</dt>
+                <dd>{{ c.deceased.city || '—' }} / {{ c.deceased.department || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Saldo estimado</dt>
+                <dd>{{ c.recoverableValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
+              </div>
+            </dl>
           </div>
-        </header>
+          @if (c.observations?.trim()) {
+            <div class="obs-callout">
+              <p class="obs-callout-label">Observaciones del caso</p>
+              <p class="obs-text">{{ c.observations }}</p>
+            </div>
+          }
+        </article>
+
+        <article class="card flush family-card">
+          <header class="pad family-head">
+            <div>
+              <h2>Familiares / posibles herederos ({{ c.relatives.length }})</h2>
+              <p class="muted">Cédula, contacto, observaciones y SLA documental.</p>
+            </div>
+            <div class="family-head-actions">
+              @if (canApprove()) {
+                <a class="act" routerLink="/cruce-datos">
+                  Análisis parentesco (IA)
+                </a>
+              }
+              <button type="button" class="act upload" (click)="showAddRelative.set(!showAddRelative())">
+                <svg lucidePlus></svg> Agregar familiar
+              </button>
+            </div>
+          </header>
 
         @if (showAddRelative()) {
           <form class="family-form pad" (ngSubmit)="addRelative()">
@@ -231,14 +200,18 @@
                   <tr [class.is-pending]="isPendingRelative(r)" [class.row-danger]="sla.tone === 'danger'">
                     <td class="relative-main">
                       <strong>{{ r.fullName }}</strong>
-                      <div class="meta-line">
-                        <span class="meta-label">Cédula</span>
-                        {{ r.documentNumber?.trim() || 'Sin cédula' }}
-                      </div>
-                      <div class="meta-line obs-line" [class.is-empty]="!r.observations?.trim()">
-                        <span class="meta-label">Obs.</span>
-                        {{ r.observations?.trim() || 'Sin observaciones' }}
-                      </div>
+                      @if (r.documentNumber?.trim()) {
+                        <div class="meta-line">
+                          <span class="meta-label">Cédula</span>
+                          {{ r.documentNumber }}
+                        </div>
+                      }
+                      @if (r.observations?.trim()) {
+                        <div class="meta-line obs-line">
+                          <span class="meta-label">Obs.</span>
+                          {{ r.observations }}
+                        </div>
+                      }
                       @if (isPendingRelative(r)) {
                         <div class="pending-tag">Datos pendientes</div>
                       }
@@ -390,27 +363,6 @@
         }
       </article>
 
-      <article class="card notes-card">
-        <header class="card-head">
-          <h2><svg lucideStickyNote></svg> Cuaderno de notas estratégicas</h2>
-        </header>
-        <textarea
-          class="notes-area"
-          rows="12"
-          [(ngModel)]="strategicNotesDraft"
-          placeholder="Apreciaciones cualitativas del caso: familia conflictiva, posible sucesión contenciosa, acuerdos verbales…"
-        ></textarea>
-        <button type="button" class="act upload" [disabled]="savingNotes()" (click)="saveNotes()">
-          @if (savingNotes()) {
-            <svg lucideLoaderCircle class="spin"></svg>
-          } @else {
-            <svg lucideStickyNote></svg>
-          }
-          Guardar nota
-        </button>
-      </article>
-    </section><!-- /.grid-23 -->
-
       </div><!-- /.bento-main -->
 
       <aside class="bento-side">
@@ -441,6 +393,54 @@
               <li>Tareas abiertas {{ openTasksCount() }}</li>
             </ul>
           </div>
+        </article>
+
+        <article class="card">
+          <header class="card-head">
+            <h2>Tareas</h2>
+            <button type="button" class="ghost" (click)="showAddTask.set(true)">
+              <svg lucidePlus></svg> Nueva
+            </button>
+          </header>
+          @if (!(c.tasks?.length)) {
+            <p class="empty">Sin tareas abiertas.</p>
+          } @else {
+            <ul class="task-list">
+              @for (t of c.tasks; track t.id) {
+                <li>
+                  <div>
+                    <strong>{{ t.title }}</strong>
+                    @if (t.dueDate) {
+                      <span class="muted">{{ t.dueDate | date: 'mediumDate' }}</span>
+                    }
+                  </div>
+                  <button type="button" class="act ok" (click)="completeTask(t.id)" title="Completar">
+                    <svg lucideCheckCircle></svg>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <article class="card notes-card">
+          <header class="card-head">
+            <h2><svg lucideStickyNote></svg> Notas estratégicas</h2>
+          </header>
+          <textarea
+            class="notes-area"
+            rows="6"
+            [(ngModel)]="strategicNotesDraft"
+            placeholder="Apreciaciones cualitativas del caso…"
+          ></textarea>
+          <button type="button" class="act upload" [disabled]="savingNotes()" (click)="saveNotes()">
+            @if (savingNotes()) {
+              <svg lucideLoaderCircle class="spin"></svg>
+            } @else {
+              <svg lucideStickyNote></svg>
+            }
+            Guardar nota
+          </button>
         </article>
 
       <article class="card">
