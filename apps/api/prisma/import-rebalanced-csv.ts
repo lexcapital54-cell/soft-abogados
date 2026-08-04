@@ -118,8 +118,22 @@ function firstEmail(raw?: string): string | undefined {
 
 function firstPhone(raw?: string): string | undefined {
   if (!raw?.trim()) return undefined;
-  const digits = raw.match(/\d[\d\s-]{6,}\d/);
-  return digits?.[0]?.replace(/\s+/g, ' ').trim().slice(0, 80);
+  const cleaned = raw.trim();
+  if (/^sin\s*informaci[oó]n$/i.test(cleaned)) return undefined;
+  // Prefer longest digit runs (celulares 10) but accept fijos 7+
+  const runs = cleaned.match(/\d[\d\s/-]{5,}\d/g);
+  if (!runs?.length) {
+    const digitsOnly = cleaned.replace(/\D/g, '');
+    return digitsOnly.length >= 7 ? digitsOnly.slice(0, 80) : undefined;
+  }
+  const normalized = runs
+    .map((r) => r.replace(/\s+/g, ' ').trim())
+    .sort((a, b) => b.replace(/\D/g, '').length - a.replace(/\D/g, '').length);
+  // Keep original multi-number text when several phones appear
+  if (runs.length > 1 && cleaned.length <= 80) {
+    return cleaned.slice(0, 80);
+  }
+  return normalized[0]?.slice(0, 80);
 }
 
 export function resolveCsvPath(): string {

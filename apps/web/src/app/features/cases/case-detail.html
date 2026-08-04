@@ -119,6 +119,10 @@
               <dt>Saldo estimado</dt>
               <dd>{{ c.recoverableValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
             </div>
+            <div class="span-2">
+              <dt>Observaciones del caso</dt>
+              <dd class="obs-text">{{ c.observations?.trim() || '—' }}</dd>
+            </div>
           </dl>
         </div>
       </article>
@@ -213,9 +217,10 @@
             <table>
               <thead>
                 <tr>
-                  <th>Nombre</th>
+                  <th>Nombre / cédula</th>
                   <th>Parentesco</th>
                   <th>Contacto</th>
+                  <th>Observaciones</th>
                   <th>Vencimiento SLA</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -227,6 +232,9 @@
                   <tr [class.is-pending]="isPendingRelative(r)" [class.row-danger]="sla.tone === 'danger'">
                     <td>
                       <strong>{{ r.fullName }}</strong>
+                      <div class="muted">
+                        CC {{ r.documentNumber?.trim() || '—' }}
+                      </div>
                       @if (isPendingRelative(r)) {
                         <div class="pending-tag">Datos pendientes</div>
                       }
@@ -235,6 +243,9 @@
                     <td>
                       {{ r.mobile || r.phone || '—' }}
                       <div class="muted">{{ contactLabel(r.contactStatus) }}</div>
+                    </td>
+                    <td>
+                      <span class="obs-text">{{ r.observations?.trim() || '—' }}</span>
                     </td>
                     <td>
                       <button type="button" class="sla-btn" (click)="openSla(r)">
@@ -268,7 +279,7 @@
 
                   @if (editPanelId() === r.id) {
                     <tr class="contact-row">
-                      <td colspan="6">
+                      <td colspan="7">
                         <div class="contact-panel">
                           <p class="contact-title">Editar / completar datos de <strong>{{ r.fullName }}</strong></p>
                           <div class="family-form edit-inline">
@@ -296,6 +307,14 @@
                               <label>Correo</label>
                               <input [(ngModel)]="editEmail" [ngModelOptions]="{ standalone: true }" />
                             </div>
+                            <div class="field field-span">
+                              <label>Observaciones</label>
+                              <textarea
+                                rows="2"
+                                [(ngModel)]="editObservations"
+                                [ngModelOptions]="{ standalone: true }"
+                              ></textarea>
+                            </div>
                           </div>
                           <div class="actions">
                             <button type="button" class="act ok" [disabled]="savingEdit()" (click)="saveEdit(r.id)">
@@ -310,7 +329,7 @@
 
                   @if (slaPanelId() === r.id) {
                     <tr class="contact-row">
-                      <td colspan="6">
+                      <td colspan="7">
                         <div class="contact-panel">
                           <p class="contact-title">Reagendar SLA — <strong>{{ r.fullName }}</strong></p>
                           <div class="contact-fields">
@@ -335,7 +354,7 @@
 
                   @if (contactPanelId() === r.id) {
                     <tr class="contact-row">
-                      <td colspan="6">
+                      <td colspan="7">
                         <div class="contact-panel">
                           <p class="contact-title">Registrar contacto con <strong>{{ r.fullName }}</strong></p>
                           <div class="contact-fields">
@@ -657,6 +676,10 @@
         <div class="field">
           <label>Abonos / cobrado</label>
           <input type="number" [(ngModel)]="editCollected" />
+        </div>
+        <div class="field">
+          <label>Observaciones del caso</label>
+          <textarea rows="3" [(ngModel)]="editCaseObservations"></textarea>
         </div>
         <div class="actions">
           <button type="button" class="act ok" [disabled]="savingCase()" (click)="saveEditCase()">

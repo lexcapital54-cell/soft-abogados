@@ -223,6 +223,7 @@ export class CaseDetailPage implements OnInit {
   editKinship: KinshipType = 'HIJO';
   editMobile = '';
   editEmail = '';
+  editObservations = '';
 
   slaDueAt = '';
   slaReason = '';
@@ -236,6 +237,7 @@ export class CaseDetailPage implements OnInit {
   editRecoverable = 0;
   editStage = 'RECEPCION';
   editCollected = 0;
+  editCaseObservations = '';
 
   newTaskTitle = '';
   newTaskDue = '';
@@ -415,6 +417,7 @@ export class CaseDetailPage implements OnInit {
     this.editRecoverable = Number(c.recoverableValue) || 0;
     this.editStage = c.stage || 'RECEPCION';
     this.editCollected = Number(c.collectedFees) || 0;
+    this.editCaseObservations = c.observations ?? '';
     this.showEditCase.set(true);
   }
 
@@ -425,6 +428,7 @@ export class CaseDetailPage implements OnInit {
         recoverableValue: this.editRecoverable,
         stage: this.editStage,
         collectedFees: this.editCollected,
+        observations: this.editCaseObservations.trim() || undefined,
       })
       .subscribe({
         next: () => {
@@ -589,6 +593,7 @@ export class CaseDetailPage implements OnInit {
       : 'OTRO') as KinshipType;
     this.editMobile = r.mobile || r.phone || '';
     this.editEmail = r.email ?? '';
+    this.editObservations = r.observations ?? '';
   }
 
   cancelEdit(): void {
@@ -609,6 +614,7 @@ export class CaseDetailPage implements OnInit {
         documentNumber: this.editDocumentNumber.trim(),
         mobile: this.editMobile.trim(),
         email: this.editEmail.trim(),
+        observations: this.editObservations.trim() || undefined,
       })
       .subscribe({
         next: () => {
