@@ -119,9 +119,9 @@
               <dt>Saldo estimado</dt>
               <dd>{{ c.recoverableValue | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}</dd>
             </div>
-            <div class="span-2">
+            <div class="span-2 obs-callout">
               <dt>Observaciones del caso</dt>
-              <dd class="obs-text">{{ c.observations?.trim() || '—' }}</dd>
+              <dd class="obs-text">{{ c.observations?.trim() || 'Sin observaciones registradas' }}</dd>
             </div>
           </dl>
         </div>
@@ -217,10 +217,9 @@
             <table>
               <thead>
                 <tr>
-                  <th>Nombre / cédula</th>
+                  <th>Familiar</th>
                   <th>Parentesco</th>
                   <th>Contacto</th>
-                  <th>Observaciones</th>
                   <th>Vencimiento SLA</th>
                   <th>Estado</th>
                   <th>Acciones</th>
@@ -230,10 +229,15 @@
                 @for (r of c.relatives; track r.id) {
                   @let sla = slaOf(r.slaDueAt);
                   <tr [class.is-pending]="isPendingRelative(r)" [class.row-danger]="sla.tone === 'danger'">
-                    <td>
+                    <td class="relative-main">
                       <strong>{{ r.fullName }}</strong>
-                      <div class="muted">
-                        CC {{ r.documentNumber?.trim() || '—' }}
+                      <div class="meta-line">
+                        <span class="meta-label">Cédula</span>
+                        {{ r.documentNumber?.trim() || 'Sin cédula' }}
+                      </div>
+                      <div class="meta-line obs-line" [class.is-empty]="!r.observations?.trim()">
+                        <span class="meta-label">Obs.</span>
+                        {{ r.observations?.trim() || 'Sin observaciones' }}
                       </div>
                       @if (isPendingRelative(r)) {
                         <div class="pending-tag">Datos pendientes</div>
@@ -243,9 +247,6 @@
                     <td>
                       {{ r.mobile || r.phone || '—' }}
                       <div class="muted">{{ contactLabel(r.contactStatus) }}</div>
-                    </td>
-                    <td>
-                      <span class="obs-text">{{ r.observations?.trim() || '—' }}</span>
                     </td>
                     <td>
                       <button type="button" class="sla-btn" (click)="openSla(r)">
@@ -279,7 +280,7 @@
 
                   @if (editPanelId() === r.id) {
                     <tr class="contact-row">
-                      <td colspan="7">
+                      <td colspan="6">
                         <div class="contact-panel">
                           <p class="contact-title">Editar / completar datos de <strong>{{ r.fullName }}</strong></p>
                           <div class="family-form edit-inline">
@@ -329,7 +330,7 @@
 
                   @if (slaPanelId() === r.id) {
                     <tr class="contact-row">
-                      <td colspan="7">
+                      <td colspan="6">
                         <div class="contact-panel">
                           <p class="contact-title">Reagendar SLA — <strong>{{ r.fullName }}</strong></p>
                           <div class="contact-fields">
@@ -354,7 +355,7 @@
 
                   @if (contactPanelId() === r.id) {
                     <tr class="contact-row">
-                      <td colspan="7">
+                      <td colspan="6">
                         <div class="contact-panel">
                           <p class="contact-title">Registrar contacto con <strong>{{ r.fullName }}</strong></p>
                           <div class="contact-fields">
