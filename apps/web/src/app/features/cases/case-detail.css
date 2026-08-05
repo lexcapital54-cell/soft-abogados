@@ -104,6 +104,26 @@
   font-weight: 650;
 }
 
+.relative-card__mail {
+  display: inline-block;
+  margin-top: 6px;
+  color: #4338ca;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.relative-card__facts dd .relative-card__mail {
+  margin-top: 0;
+}
+
+.relative-card__email {
+  word-break: break-all;
+  font-weight: 600;
+  color: #0b132b;
+}
+
 .relative-card__facts {
   margin: 0;
   display: grid;

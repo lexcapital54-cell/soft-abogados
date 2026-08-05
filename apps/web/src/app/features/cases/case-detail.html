@@ -168,6 +168,10 @@
               <input [(ngModel)]="newMobile" name="nm" />
             </div>
             <div class="field">
+              <label>Correo</label>
+              <input type="email" [(ngModel)]="newEmail" name="ne" />
+            </div>
+            <div class="field">
               <label>SLA docs</label>
               <input type="date" [(ngModel)]="newSlaDueAt" name="ns" />
             </div>
@@ -194,6 +198,9 @@
                   <div>
                     <h3>{{ r.fullName }}</h3>
                     <p class="relative-card__kin">{{ kinshipLabel(r.kinship) }}</p>
+                    @if (r.email?.trim()) {
+                      <a class="relative-card__mail" [href]="'mailto:' + r.email">{{ r.email }}</a>
+                    }
                   </div>
                   <app-status-badge
                     [status]="contactBadge(r.contactStatus)"
@@ -212,7 +219,13 @@
                   </div>
                   <div>
                     <dt>Correo</dt>
-                    <dd class="relative-card__email">{{ r.email?.trim() || '—' }}</dd>
+                    <dd>
+                      @if (r.email?.trim(); as mail) {
+                        <a class="relative-card__mail" [href]="'mailto:' + mail">{{ mail }}</a>
+                      } @else {
+                        <span class="muted">Sin correo</span>
+                      }
+                    </dd>
                   </div>
                   <div>
                     <dt>SLA</dt>
