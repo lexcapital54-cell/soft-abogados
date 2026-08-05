@@ -207,8 +207,12 @@
                     <dd>{{ r.documentNumber?.trim() || '—' }}</dd>
                   </div>
                   <div>
-                    <dt>Contacto</dt>
+                    <dt>Celular</dt>
                     <dd>{{ r.mobile || r.phone || '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Correo</dt>
+                    <dd class="relative-card__email">{{ r.email?.trim() || '—' }}</dd>
                   </div>
                   <div>
                     <dt>SLA</dt>

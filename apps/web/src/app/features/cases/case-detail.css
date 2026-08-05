@@ -131,6 +131,12 @@
   font-weight: 600;
 }
 
+.relative-card__email {
+  word-break: break-all;
+  font-weight: 600;
+  color: #0b132b;
+}
+
 .relative-card__sla {
   display: flex;
   flex-wrap: wrap;
