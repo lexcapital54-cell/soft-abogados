@@ -392,26 +392,30 @@
             </ul>
           }
         </article>
+      </aside><!-- /.bento-side -->
+    </section><!-- /.bento -->
 
-        <article class="card notes-card">
-          <header class="card-head">
-            <h2><svg lucideStickyNote></svg> Notas estratégicas</h2>
-          </header>
-          <textarea
-            class="notes-area"
-            rows="6"
-            [(ngModel)]="strategicNotesDraft"
-            placeholder="Apreciaciones cualitativas del caso…"
-          ></textarea>
-          <button type="button" class="act upload" [disabled]="savingNotes()" (click)="saveNotes()">
-            @if (savingNotes()) {
-              <svg lucideLoaderCircle class="spin"></svg>
-            } @else {
-              <svg lucideStickyNote></svg>
-            }
-            Guardar nota
-          </button>
-        </article>
+    <!-- Fila intermedia: notas + bitácora + financiero -->
+    <section class="mid-row">
+      <article class="card notes-card">
+        <header class="card-head">
+          <h2><svg lucideStickyNote></svg> Notas estratégicas</h2>
+        </header>
+        <textarea
+          class="notes-area"
+          rows="7"
+          [(ngModel)]="strategicNotesDraft"
+          placeholder="Apreciaciones cualitativas del caso…"
+        ></textarea>
+        <button type="button" class="act upload" [disabled]="savingNotes()" (click)="saveNotes()">
+          @if (savingNotes()) {
+            <svg lucideLoaderCircle class="spin"></svg>
+          } @else {
+            <svg lucideStickyNote></svg>
+          }
+          Guardar nota
+        </button>
+      </article>
 
       <article class="card">
         <header class="card-head">
@@ -495,8 +499,7 @@
           </button>
         </div>
       </article>
-      </aside><!-- /.bento-side -->
-    </section><!-- /.bento -->
+    </section>
 
     <!-- Documentación a ancho completo (sin scroll horizontal) -->
     <section class="docs-section">

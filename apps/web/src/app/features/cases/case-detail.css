@@ -161,6 +161,21 @@
   border-top: 1px solid #eef2f7;
 }
 
+.mid-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.mid-row .notes-area {
+  min-height: 140px;
+}
+
+.mid-row .timeline {
+  max-height: 220px;
+}
+
 @media (max-width: 1100px) {
   .kpi-bar {
     grid-template-columns: repeat(3, 1fr);
@@ -175,6 +190,10 @@
   }
 
   .relative-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mid-row {
     grid-template-columns: 1fr;
   }
 }
