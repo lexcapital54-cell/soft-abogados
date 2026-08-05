@@ -265,16 +265,6 @@
   background: #fffef8;
 }
 
-@media (max-width: 1100px) {
-  .kpi-bar {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .bento {
-    grid-template-columns: 1fr;
-  }
-}
-
 .header-actions {
   display: flex;
   gap: 8px;
