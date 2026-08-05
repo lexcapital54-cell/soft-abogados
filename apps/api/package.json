@@ -28,7 +28,9 @@
     "storage:upload-supabase": "ts-node --project scripts/tsconfig.json scripts/upload-storage-to-supabase.ts",
     "storage:upload-supabase:dry": "ts-node --project scripts/tsconfig.json scripts/upload-storage-to-supabase.ts --dry-run",
     "sync:relative-fields": "ts-node --project scripts/tsconfig.json scripts/resync-relative-fields.ts",
-    "sync:relative-fields:dry": "ts-node --project scripts/tsconfig.json scripts/resync-relative-fields.ts --dry-run"
+    "sync:relative-fields:dry": "ts-node --project scripts/tsconfig.json scripts/resync-relative-fields.ts --dry-run",
+    "rebalance:advisors": "ts-node --project scripts/tsconfig.json scripts/rebalance-advisors.ts",
+    "rebalance:advisors:dry": "ts-node --project scripts/tsconfig.json scripts/rebalance-advisors.ts --dry-run"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
