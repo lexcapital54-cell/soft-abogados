@@ -5,6 +5,7 @@ dist/
 build/
 .tmp/
 .cache/
+apps/api/.tmp-prioritize-summary.json
 
 # Environment / secrets
 .env
@@ -37,6 +38,9 @@ uploads/
 tmp/
 apps/api/storage/
 /storage/
+
+# Sitio público (copia local para publicar en hosting)
+public-site/
 
 # Datos sensibles / operativos (no subir a GitHub)
 Casos y documentos/

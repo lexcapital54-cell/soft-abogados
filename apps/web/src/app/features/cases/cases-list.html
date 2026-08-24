@@ -39,8 +39,36 @@
       </select>
     }
 
+    <select
+      [ngModel]="priority"
+      (ngModelChange)="changePriority($event)"
+      name="priority"
+      aria-label="Filtrar por prioridad"
+    >
+      <option value="">Todas las prioridades</option>
+      @for (p of priorities; track p.value) {
+        <option [value]="p.value">{{ p.label }}</option>
+      }
+    </select>
+
     <button type="submit">Buscar</button>
   </form>
+
+  <div class="page__chips" role="group" aria-label="Accesos rápidos de prioridad">
+    <button
+      type="button"
+      class="chip chip--high"
+      [class.chip--active]="priority === 'HIGH'"
+      (click)="showHighPriority()"
+    >
+      Ver alta prioridad
+    </button>
+    @if (priority) {
+      <button type="button" class="chip" (click)="clearPriority()">
+        Quitar filtro ({{ priorityLabel(priority) }})
+      </button>
+    }
+  </div>
 
   @if (error()) {
     <p class="error">{{ error() }}</p>
@@ -57,6 +85,7 @@
           <tr>
             <th>Código</th>
             <th>Fallecido</th>
+            <th>Prioridad</th>
             <th>Etapa</th>
             <th>Estado</th>
             <th>Valor</th>
@@ -72,6 +101,15 @@
               <td>
                 <div>{{ item.deceased.fullName }}</div>
                 <small>CC {{ item.deceased.documentNumber }}</small>
+              </td>
+              <td>
+                <span
+                  class="prio"
+                  [class.prio--high]="item.priority === 'HIGH'"
+                  [class.prio--critical]="item.priority === 'CRITICAL'"
+                >
+                  {{ priorityLabel(item.priority) }}
+                </span>
               </td>
               <td>{{ item.stage }}</td>
               <td>{{ item.status }}</td>

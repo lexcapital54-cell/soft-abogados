@@ -6,7 +6,10 @@
       <p class="cmd-lead">{{ urgentSummary() }}</p>
     </div>
     <div class="cmd-hero__actions">
-      <a routerLink="/cases" class="cmd-btn">Mis casos</a>
+      <a routerLink="/cases" [queryParams]="{ priority: 'HIGH' }" class="cmd-btn">
+        Alta prioridad
+      </a>
+      <a routerLink="/cases" class="cmd-btn ghost">Mis casos</a>
       <a routerLink="/tasks" class="cmd-btn ghost">Tareas</a>
     </div>
   </header>

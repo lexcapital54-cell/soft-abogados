@@ -180,6 +180,10 @@ export class ListCasesQueryDto {
   stage?: CaseStage;
 
   @IsOptional()
+  @IsEnum(CasePriority)
+  priority?: CasePriority;
+
+  @IsOptional()
   @IsString()
   advisorId?: string;
 

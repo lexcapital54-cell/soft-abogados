@@ -86,6 +86,7 @@ export class CasesApiService {
     page?: number;
     pageSize?: number;
     advisorId?: string;
+    priority?: string;
   }) {
     let params = new HttpParams()
       .set('page', String(options?.page ?? 1))
@@ -95,6 +96,9 @@ export class CasesApiService {
     }
     if (options?.advisorId) {
       params = params.set('advisorId', options.advisorId);
+    }
+    if (options?.priority) {
+      params = params.set('priority', options.priority);
     }
     return this.http.get<CaseListResponse>(`${environment.apiBaseUrl}/cases`, {
       params,

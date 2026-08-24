@@ -1,6 +1,6 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe } from '@angular/common';
 import {
   LucideChevronLeft,
@@ -17,6 +17,13 @@ import {
   UsersApiService,
 } from '../../core/services/users-api.service';
 import { AuthService } from '../../core/auth/auth.service';
+
+const PRIORITY_OPTIONS = [
+  { value: 'HIGH', label: 'Alta (HIGH)' },
+  { value: 'CRITICAL', label: 'Crítica' },
+  { value: 'MEDIUM', label: 'Media' },
+  { value: 'LOW', label: 'Baja' },
+] as const;
 
 @Component({
   selector: 'app-cases-list',
@@ -35,6 +42,7 @@ import { AuthService } from '../../core/auth/auth.service';
 export class CasesListPage implements OnInit {
   private readonly api = inject(CasesApiService);
   private readonly usersApi = inject(UsersApiService);
+  private readonly route = inject(ActivatedRoute);
   readonly auth = inject(AuthService);
 
   readonly items = signal<CaseListItem[]>([]);
@@ -47,6 +55,9 @@ export class CasesListPage implements OnInit {
   readonly error = signal<string | null>(null);
   search = '';
   advisorId = '';
+  priority = '';
+
+  readonly priorities = PRIORITY_OPTIONS;
 
   readonly rangeLabel = computed(() => {
     const total = this.total();
@@ -67,6 +78,11 @@ export class CasesListPage implements OnInit {
   });
 
   ngOnInit(): void {
+    const qp = this.route.snapshot.queryParamMap.get('priority');
+    if (qp && ['HIGH', 'CRITICAL', 'MEDIUM', 'LOW'].includes(qp)) {
+      this.priority = qp;
+    }
+
     if (this.auth.isSuperAdmin()) {
       this.usersApi.list().subscribe({
         next: (users) =>
@@ -90,6 +106,7 @@ export class CasesListPage implements OnInit {
           this.auth.isSuperAdmin() && this.advisorId
             ? this.advisorId
             : undefined,
+        priority: this.priority || undefined,
       })
       .subscribe({
         next: (res) => {
@@ -122,5 +139,24 @@ export class CasesListPage implements OnInit {
   changeAdvisor(id: string): void {
     this.advisorId = id;
     this.load(true);
+  }
+
+  changePriority(value: string): void {
+    this.priority = value;
+    this.load(true);
+  }
+
+  showHighPriority(): void {
+    this.priority = 'HIGH';
+    this.load(true);
+  }
+
+  clearPriority(): void {
+    this.priority = '';
+    this.load(true);
+  }
+
+  priorityLabel(value: string): string {
+    return PRIORITY_OPTIONS.find((p) => p.value === value)?.label ?? value;
   }
 }

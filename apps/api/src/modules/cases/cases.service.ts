@@ -71,6 +71,7 @@ export class CasesService {
     const where: Prisma.CaseWhereInput = {
       ...(query.status ? { status: query.status } : {}),
       ...(query.stage ? { stage: query.stage } : {}),
+      ...(query.priority ? { priority: query.priority } : {}),
       ...(scopedAdvisorId ? { advisorId: scopedAdvisorId } : {}),
       ...(query.search
         ? {
@@ -125,7 +126,7 @@ export class CasesService {
           },
           _count: { select: { relatives: true, documents: true, tasks: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
