@@ -91,6 +91,10 @@ export class RepositoryPage implements OnInit {
   }
 
   upload(): void {
+    if (!this.auth.isSuperAdmin()) {
+      this.error.set('Solo dirección puede subir documentos corporativos');
+      return;
+    }
     if (!this.selectedFile) {
       this.error.set('Seleccione un archivo PDF');
       return;
@@ -118,27 +122,26 @@ export class RepositoryPage implements OnInit {
   }
 
   download(doc: RepoDocument): void {
-    const token = this.auth.token();
-    const url = this.api.fileUrl(doc.id);
-    // Abrir con auth via fetch blob
-    fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error('download');
-        return r.blob();
-      })
-      .then((blob) => {
+    this.error.set(null);
+    this.api.downloadBlob(doc.id).subscribe({
+      next: (blob) => {
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = doc.nombre.endsWith('.pdf') ? doc.nombre : `${doc.nombre}.pdf`;
+        a.download = doc.nombre.toLowerCase().endsWith('.pdf')
+          ? doc.nombre
+          : `${doc.nombre}.pdf`;
         a.click();
         URL.revokeObjectURL(a.href);
-      })
-      .catch(() => this.error.set('No se pudo descargar el archivo'));
+      },
+      error: () =>
+        this.error.set(
+          'No se pudo descargar el archivo. Verifique permisos o intente de nuevo.',
+        ),
+    });
   }
 
   remove(doc: RepoDocument): void {
+    if (!this.auth.isSuperAdmin()) return;
     if (!confirm(`¿Desactivar "${doc.nombre}" del repositorio?`)) return;
     this.api.deactivate(doc.id).subscribe({
       next: () => this.load(),

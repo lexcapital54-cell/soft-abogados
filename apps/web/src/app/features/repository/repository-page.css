@@ -85,6 +85,15 @@
   color: #9f1239;
 }
 
+.repo-hint {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(197, 168, 102, 0.45);
+  background: #fff8e8;
+  color: #5c4a1f;
+  font-size: 0.9rem;
+}
+
 .repo-drop {
   position: relative;
   display: flex;

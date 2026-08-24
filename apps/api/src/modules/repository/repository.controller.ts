@@ -15,12 +15,19 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import type { Request, Response } from 'express';
-import { RepoCategoria } from '@prisma/client';
-import { CurrentUser } from '../../common/decorators/auth.decorators';
+import { RepoCategoria, UserRole } from '@prisma/client';
+import { CurrentUser, Roles } from '../../common/decorators/auth.decorators';
 import type { AuthUser } from '../../common/decorators/auth.decorators';
 import { clientIp } from '../../common/utils/client-ip';
 import { ListRepoQueryDto } from './dto/repository.dto';
 import { RepositoryService } from './repository.service';
+
+const REPO_MANAGERS: UserRole[] = [
+  UserRole.SUPER_ADMIN,
+  UserRole.ADMIN,
+  UserRole.CEO,
+  UserRole.DIRECTOR_JURIDICO,
+];
 
 @Controller('repository')
 export class RepositoryController {
@@ -37,6 +44,7 @@ export class RepositoryController {
   }
 
   @Post('upload')
+  @Roles(...REPO_MANAGERS)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -62,22 +70,23 @@ export class RepositoryController {
   @Get(':id/file')
   async file(
     @Param('id') id: string,
+    @Query('download') download: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { opened, mimeType, filename } =
-      await this.repository.fileStream(id);
-    if (opened.kind === 'redirect') {
-      res.redirect(opened.url);
-      return;
-    }
+    const { stream, mimeType, filename } =
+      await this.repository.fileDownloadStream(id);
+    const safeName = filename.replace(/[\r\n"]+/g, '_');
+    const asAttachment = download === '1' || download === 'true';
     res.set({
       'Content-Type': mimeType,
-      'Content-Disposition': `inline; filename="${encodeURIComponent(filename)}"`,
+      'Content-Disposition': `${asAttachment ? 'attachment' : 'inline'}; filename="${encodeURIComponent(safeName)}"`,
+      'Cache-Control': 'private, no-store',
     });
-    return new StreamableFile(opened.stream);
+    return new StreamableFile(stream);
   }
 
   @Delete(':id')
+  @Roles(...REPO_MANAGERS)
   deactivate(
     @Param('id') id: string,
     @CurrentUser() user: AuthUser,

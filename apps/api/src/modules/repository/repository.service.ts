@@ -143,4 +143,26 @@ export class RepositoryService {
       filename: doc.nombre,
     };
   }
+
+  /** Stream siempre proxied (apto para descarga autenticada desde el front). */
+  async fileDownloadStream(id: string): Promise<{
+    stream: import('node:stream').Readable;
+    mimeType: string;
+    filename: string;
+  }> {
+    const doc = await this.prisma.repositorioCorporativo.findUnique({
+      where: { id },
+    });
+    if (!doc?.storageKey || !doc.activo) {
+      throw new NotFoundException('Documento no encontrado');
+    }
+    const { stream } = await this.storage.openAsStream(doc.storageKey);
+    return {
+      stream,
+      mimeType: doc.mimeType ?? 'application/pdf',
+      filename: doc.nombre.endsWith('.pdf')
+        ? doc.nombre
+        : `${doc.nombre}.pdf`,
+    };
+  }
 }

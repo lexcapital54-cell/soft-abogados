@@ -10,6 +10,7 @@ import { createReadStream, existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Readable } from 'node:stream';
+import { Readable as NodeReadable } from 'node:stream';
 
 export type StoredObject = {
   /** Ruta relativa: casos/CEDULA_NOMBRE/archivo.pdf */
@@ -186,6 +187,53 @@ export class StorageService {
   publicUrlFor(storageKey: string): string | null {
     if (!this.supabaseUrl) return null;
     return `${this.supabaseUrl}/storage/v1/object/public/${this.bucket}/${storageKey}`;
+  }
+
+  /**
+   * Siempre devuelve un stream (proxy server-side si el objeto está en Supabase).
+   * Evita redirects 302 al browser (CORS + pérdida de Authorization en fetch).
+   */
+  async openAsStream(storageKey: string): Promise<{
+    stream: Readable;
+    mimeHint?: string;
+  }> {
+    const opened = await this.open(storageKey);
+    if (opened.kind === 'stream') {
+      return { stream: opened.stream, mimeHint: opened.mimeHint };
+    }
+    return { stream: await this.proxyRemoteObject(storageKey, opened.url) };
+  }
+
+  private async proxyRemoteObject(
+    storageKey: string,
+    publicUrl: string,
+  ): Promise<Readable> {
+    const key = this.sanitizeKey(storageKey.replace(/^\/+/, ''));
+
+    // 1) Intento público
+    let res = await fetch(publicUrl);
+    // 2) Bucket privado / fallo público → descarga autenticada con service role
+    if (!res.ok && this.supabaseUrl && this.supabaseKey) {
+      const authUrl = `${this.supabaseUrl}/storage/v1/object/${this.bucket}/${key}`;
+      res = await fetch(authUrl, {
+        headers: {
+          Authorization: `Bearer ${this.supabaseKey}`,
+          apikey: this.supabaseKey,
+        },
+      });
+    }
+
+    if (!res.ok || !res.body) {
+      const detail = await res.text().catch(() => '');
+      this.logger.error(
+        `No se pudo proxyar storage key=${key}: ${res.status} ${detail}`,
+      );
+      throw new NotFoundException('Archivo no encontrado en storage');
+    }
+
+    return NodeReadable.fromWeb(
+      res.body as import('stream/web').ReadableStream,
+    );
   }
 
   async open(storageKey: string): Promise<OpenedObject> {

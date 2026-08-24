@@ -53,8 +53,15 @@ export class RepositoryApiService {
     );
   }
 
-  fileUrl(id: string): string {
-    return `${environment.apiBaseUrl}/repository/${id}/file`;
+  fileUrl(id: string, opts?: { download?: boolean }) {
+    const q = opts?.download ? '?download=1' : '';
+    return `${environment.apiBaseUrl}/repository/${id}/file${q}`;
+  }
+
+  downloadBlob(id: string) {
+    return this.http.get(this.fileUrl(id, { download: true }), {
+      responseType: 'blob',
+    });
   }
 
   deactivate(id: string) {

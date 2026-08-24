@@ -20,49 +20,55 @@
     <div class="repo-error" role="alert">{{ error() }}</div>
   }
 
-  <section
-    class="repo-drop"
-    [class.is-over]="dragOver"
-    (dragover)="$event.preventDefault(); dragOver = true"
-    (dragleave)="dragOver = false"
-    (drop)="onDrop($event)"
-  >
-    <svg lucideUpload></svg>
-    <div>
-      <strong>Subir documento corporativo (PDF)</strong>
-      <p>Arrastre aquí o seleccione un archivo</p>
-    </div>
-    <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" />
-  </section>
-
-  <div class="repo-upload-form">
-    <label>
-      Nombre
-      <input [(ngModel)]="nombre" name="nombre" placeholder="Ej: Carta de presentación" />
-    </label>
-    <label>
-      Categoría
-      <select [(ngModel)]="categoria" name="categoria">
-        <option value="PLANTILLA">Plantilla</option>
-        <option value="PORTAFOLIO">Portafolio</option>
-        <option value="LEGAL">Legal</option>
-      </select>
-    </label>
-    <p class="repo-file-name">
-      {{ selectedFile ? selectedFile.name : 'Ningún archivo seleccionado' }}
-    </p>
-    <button
-      type="button"
-      class="repo-btn primary"
-      [disabled]="uploading() || !selectedFile"
-      (click)="upload()"
+  @if (auth.isSuperAdmin()) {
+    <section
+      class="repo-drop"
+      [class.is-over]="dragOver"
+      (dragover)="$event.preventDefault(); dragOver = true"
+      (dragleave)="dragOver = false"
+      (drop)="onDrop($event)"
     >
-      @if (uploading()) {
-        <svg lucideLoaderCircle class="spin"></svg>
-      }
-      Subir a repositorio
-    </button>
-  </div>
+      <svg lucideUpload></svg>
+      <div>
+        <strong>Subir documento corporativo (PDF)</strong>
+        <p>Arrastre aquí o seleccione un archivo</p>
+      </div>
+      <input type="file" accept="application/pdf,.pdf" (change)="onFileSelected($event)" />
+    </section>
+
+    <div class="repo-upload-form">
+      <label>
+        Nombre
+        <input [(ngModel)]="nombre" name="nombre" placeholder="Ej: Carta de presentación" />
+      </label>
+      <label>
+        Categoría
+        <select [(ngModel)]="categoria" name="categoria">
+          <option value="PLANTILLA">Plantilla</option>
+          <option value="PORTAFOLIO">Portafolio</option>
+          <option value="LEGAL">Legal</option>
+        </select>
+      </label>
+      <p class="repo-file-name">
+        {{ selectedFile ? selectedFile.name : 'Ningún archivo seleccionado' }}
+      </p>
+      <button
+        type="button"
+        class="repo-btn primary"
+        [disabled]="uploading() || !selectedFile"
+        (click)="upload()"
+      >
+        @if (uploading()) {
+          <svg lucideLoaderCircle class="spin"></svg>
+        }
+        Subir a repositorio
+      </button>
+    </div>
+  } @else {
+    <p class="repo-hint">
+      Puede descargar plantillas y documentos. La carga la gestiona dirección.
+    </p>
+  }
 
   <div class="repo-filters">
     <label>
@@ -124,9 +130,11 @@
                 <button type="button" class="repo-icon" title="Descargar" (click)="download(d)">
                   <svg lucideDownload></svg>
                 </button>
-                <button type="button" class="repo-icon danger" title="Desactivar" (click)="remove(d)">
-                  <svg lucideTrash2></svg>
-                </button>
+                @if (auth.isSuperAdmin()) {
+                  <button type="button" class="repo-icon danger" title="Desactivar" (click)="remove(d)">
+                    <svg lucideTrash2></svg>
+                  </button>
+                }
               </td>
             </tr>
           }
