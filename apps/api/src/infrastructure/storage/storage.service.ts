@@ -190,64 +190,159 @@ export class StorageService {
   }
 
   /**
-   * Siempre devuelve un stream (proxy server-side si el objeto está en Supabase).
-   * Evita redirects 302 al browser (CORS + pérdida de Authorization en fetch).
+   * Stream del archivo sin depender del driver:
+   * 1) disco local si existe
+   * 2) Supabase público
+   * 3) Supabase autenticado (service role)
+   * 4) URL firmada + fetch
    */
   async openAsStream(storageKey: string): Promise<{
     stream: Readable;
     mimeHint?: string;
   }> {
-    const opened = await this.open(storageKey);
-    if (opened.kind === 'stream') {
-      return { stream: opened.stream, mimeHint: opened.mimeHint };
+    const key = this.sanitizeKey(storageKey.replace(/^\/+/, ''));
+    if (!key || key.includes('..')) {
+      throw new BadRequestException('Clave de archivo inválida');
     }
-    return { stream: await this.proxyRemoteObject(storageKey, opened.url) };
+
+    const absolute = this.resolveAbsolute(key);
+    const fallback = this.resolveAbsolute(storageKey.replace(/^\/+/, ''));
+    const localPath = existsSync(absolute)
+      ? absolute
+      : existsSync(fallback)
+        ? fallback
+        : null;
+    if (localPath) {
+      return { stream: createReadStream(localPath) };
+    }
+
+    if (!this.supabaseUrl || !this.supabaseKey) {
+      this.logger.error(
+        `Archivo ausente en disco y Supabase no configurado (key=${key}, driver=${this.driver})`,
+      );
+      throw new NotFoundException(
+        'Archivo no encontrado (configure SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY en Render)',
+      );
+    }
+
+    const stream = await this.fetchSupabaseObject(key);
+    return { stream };
   }
 
-  private async proxyRemoteObject(
+  /** URL firmada de corta duración para descarga directa en el navegador. */
+  async createSignedUrl(
     storageKey: string,
-    publicUrl: string,
-  ): Promise<Readable> {
+    expiresInSeconds = 180,
+  ): Promise<string> {
     const key = this.sanitizeKey(storageKey.replace(/^\/+/, ''));
+    if (!key || key.includes('..')) {
+      throw new BadRequestException('Clave de archivo inválida');
+    }
+    if (!this.supabaseUrl || !this.supabaseKey) {
+      throw new ServiceUnavailableException(
+        'Storage Supabase no configurado (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)',
+      );
+    }
 
-    // 1) Intento público
-    let res = await fetch(publicUrl);
-    // 2) Bucket privado / fallo público → descarga autenticada con service role
-    if (!res.ok && this.supabaseUrl && this.supabaseKey) {
-      const authUrl = `${this.supabaseUrl}/storage/v1/object/${this.bucket}/${key}`;
-      res = await fetch(authUrl, {
+    const signRes = await fetch(
+      `${this.supabaseUrl}/storage/v1/object/sign/${this.bucket}/${key}`,
+      {
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${this.supabaseKey}`,
           apikey: this.supabaseKey,
+          'Content-Type': 'application/json',
         },
-      });
-    }
-
-    if (!res.ok || !res.body) {
-      const detail = await res.text().catch(() => '');
-      this.logger.error(
-        `No se pudo proxyar storage key=${key}: ${res.status} ${detail}`,
-      );
-      throw new NotFoundException('Archivo no encontrado en storage');
-    }
-
-    return NodeReadable.fromWeb(
-      res.body as import('stream/web').ReadableStream,
+        body: JSON.stringify({ expiresIn: expiresInSeconds }),
+      },
     );
+    const body = (await signRes.json().catch(() => ({}))) as {
+      signedURL?: string;
+      signedUrl?: string;
+      error?: string;
+      message?: string;
+    };
+    if (!signRes.ok) {
+      this.logger.error(
+        `Supabase sign failed key=${key}: ${signRes.status} ${JSON.stringify(body)}`,
+      );
+      throw new NotFoundException('No se pudo firmar la URL del archivo');
+    }
+    const path = body.signedURL || body.signedUrl;
+    if (!path) {
+      throw new NotFoundException('Supabase no devolvió signedURL');
+    }
+    return path.startsWith('http')
+      ? path
+      : `${this.supabaseUrl}/storage/v1${path.startsWith('/') ? path : `/${path}`}`;
+  }
+
+  private async fetchSupabaseObject(key: string): Promise<Readable> {
+    const candidates: Array<{ label: string; url: string; auth: boolean }> = [
+      {
+        label: 'public',
+        url: `${this.supabaseUrl}/storage/v1/object/public/${this.bucket}/${key}`,
+        auth: false,
+      },
+      {
+        label: 'authenticated',
+        url: `${this.supabaseUrl}/storage/v1/object/authenticated/${this.bucket}/${key}`,
+        auth: true,
+      },
+      {
+        label: 'object',
+        url: `${this.supabaseUrl}/storage/v1/object/${this.bucket}/${key}`,
+        auth: true,
+      },
+    ];
+
+    for (const c of candidates) {
+      try {
+        const res = await fetch(c.url, {
+          headers: c.auth
+            ? {
+                Authorization: `Bearer ${this.supabaseKey}`,
+                apikey: this.supabaseKey!,
+              }
+            : undefined,
+        });
+        if (res.ok && res.body) {
+          return NodeReadable.fromWeb(
+            res.body as import('stream/web').ReadableStream,
+          );
+        }
+        this.logger.warn(
+          `Supabase ${c.label} → ${res.status} key=${key}`,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Supabase ${c.label} falló key=${key}: ${(err as Error).message}`,
+        );
+      }
+    }
+
+    // Último recurso: firmar y bajar
+    try {
+      const signed = await this.createSignedUrl(key, 60);
+      const res = await fetch(signed);
+      if (res.ok && res.body) {
+        return NodeReadable.fromWeb(
+          res.body as import('stream/web').ReadableStream,
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        `Supabase signed fetch falló key=${key}: ${(err as Error).message}`,
+      );
+    }
+
+    throw new NotFoundException('Archivo no encontrado en storage');
   }
 
   async open(storageKey: string): Promise<OpenedObject> {
     const key = this.sanitizeKey(storageKey.replace(/^\/+/, ''));
     if (!key || key.includes('..')) {
       throw new BadRequestException('Clave de archivo inválida');
-    }
-
-    if (this.driver === 'supabase') {
-      const url = this.publicUrlFor(key);
-      if (!url) {
-        throw new ServiceUnavailableException('Storage Supabase no configurado');
-      }
-      return { kind: 'redirect', url };
     }
 
     const absolute = this.resolveAbsolute(key);
@@ -261,10 +356,21 @@ export class StorageService {
       return { kind: 'stream', stream: createReadStream(path) };
     }
 
-    // En cloud (Render) el disco local no tiene los syncs: redirigir a Supabase si hay URL.
-    const remote = this.publicUrlFor(key);
-    if (remote) {
-      return { kind: 'redirect', url: remote };
+    // Preferir URL firmada (bucket privado) si hay credenciales
+    if (this.supabaseUrl && this.supabaseKey) {
+      try {
+        const signed = await this.createSignedUrl(key, 300);
+        return { kind: 'redirect', url: signed };
+      } catch (err) {
+        this.logger.warn(
+          `No se pudo firmar ${key}: ${(err as Error).message}`,
+        );
+      }
+    }
+
+    if (this.driver === 'supabase' || this.supabaseUrl) {
+      const url = this.publicUrlFor(key);
+      if (url) return { kind: 'redirect', url };
     }
 
     throw new NotFoundException('Archivo no encontrado');

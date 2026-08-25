@@ -67,6 +67,11 @@ export class RepositoryController {
     );
   }
 
+  @Get(':id/signed-url')
+  signedUrl(@Param('id') id: string) {
+    return this.repository.signedDownloadUrl(id);
+  }
+
   @Get(':id/file')
   async file(
     @Param('id') id: string,

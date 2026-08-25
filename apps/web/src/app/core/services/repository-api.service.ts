@@ -64,6 +64,12 @@ export class RepositoryApiService {
     });
   }
 
+  signedUrl(id: string) {
+    return this.http.get<{ url: string; filename: string }>(
+      `${environment.apiBaseUrl}/repository/${id}/signed-url`,
+    );
+  }
+
   deactivate(id: string) {
     return this.http.delete(`${environment.apiBaseUrl}/repository/${id}`);
   }

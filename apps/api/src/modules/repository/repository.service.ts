@@ -159,8 +159,24 @@ export class RepositoryService {
     const { stream } = await this.storage.openAsStream(doc.storageKey);
     return {
       stream,
-      mimeType: doc.mimeType ?? 'application/pdf',
-      filename: doc.nombre.endsWith('.pdf')
+      mimeType: doc.mimeType ?? 'application/octet-stream',
+      filename: /\.[a-z0-9]+$/i.test(doc.nombre)
+        ? doc.nombre
+        : `${doc.nombre}.pdf`,
+    };
+  }
+
+  async signedDownloadUrl(id: string): Promise<{ url: string; filename: string }> {
+    const doc = await this.prisma.repositorioCorporativo.findUnique({
+      where: { id },
+    });
+    if (!doc?.storageKey || !doc.activo) {
+      throw new NotFoundException('Documento no encontrado');
+    }
+    const url = await this.storage.createSignedUrl(doc.storageKey, 300);
+    return {
+      url,
+      filename: /\.[a-z0-9]+$/i.test(doc.nombre)
         ? doc.nombre
         : `${doc.nombre}.pdf`,
     };

@@ -123,20 +123,40 @@ export class RepositoryPage implements OnInit {
 
   download(doc: RepoDocument): void {
     this.error.set(null);
-    this.api.downloadBlob(doc.id).subscribe({
-      next: (blob) => {
+    // 1) URL firmada (más fiable para asesores / CORS)
+    this.api.signedUrl(doc.id).subscribe({
+      next: ({ url, filename }) => {
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = doc.nombre.toLowerCase().endsWith('.pdf')
-          ? doc.nombre
-          : `${doc.nombre}.pdf`;
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.download = filename || doc.nombre;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(a.href);
+        a.remove();
       },
-      error: () =>
-        this.error.set(
-          'No se pudo descargar el archivo. Verifique permisos o intente de nuevo.',
-        ),
+      error: () => {
+        // 2) Fallback: proxy autenticado por la API
+        this.api.downloadBlob(doc.id).subscribe({
+          next: (blob) => {
+            if (blob.type?.includes('json')) {
+              this.error.set('No se pudo descargar el archivo desde storage');
+              return;
+            }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = /\.[a-z0-9]+$/i.test(doc.nombre)
+              ? doc.nombre
+              : `${doc.nombre}.pdf`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          },
+          error: () =>
+            this.error.set(
+              'No se pudo descargar. Verifique que Supabase Storage esté configurado en la API.',
+            ),
+        });
+      },
     });
   }
 
